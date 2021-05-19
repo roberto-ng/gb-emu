@@ -1,3 +1,7 @@
+mod cpu;
+mod cpu_registers;
+mod instruction;
+
 #[cfg(test)]
 mod tests {
     #[test]
