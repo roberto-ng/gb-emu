@@ -1,5 +1,10 @@
 use std::convert;
 
+const ZERO_FLAG_BYTE_POSITION: u8 = 7;
+const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;
+const HALF_CARRY_FLAG_BYTE_POSITION: u8 = 5;
+const CARRY_FLAG_BYTE_POSITION: u8 = 4;
+
 pub struct Registers {
     pub a: u8,
     pub b: u8,
@@ -11,7 +16,27 @@ pub struct Registers {
     pub l: u8,
 }
 
+pub struct FlagsRegister {
+    pub zero: bool,
+    pub subtract: bool,
+    pub half_carry: bool,
+    pub carry: bool,
+}
+
 impl Registers {
+    pub fn new() -> Registers {
+        Registers {
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            e: 0,
+            f: FlagsRegister::new(),
+            h: 0,
+            l: 0,
+        }
+    }
+
     pub fn get_bc(&self) -> u16 {
         (self.b as u16) << 8 | (self.c as u16)
     }
@@ -21,19 +46,6 @@ impl Registers {
         self.c = (value & 0xFF) as u8;
     }
 }
-
-const ZERO_FLAG_BYTE_POSITION: u8 = 7;
-const SUBTRACT_FLAG_BYTE_POSITION: u8 = 6;
-const HALF_CARRY_FLAG_BYTE_POSITION: u8 = 5;
-const CARRY_FLAG_BYTE_POSITION: u8 = 4;
-
-pub struct FlagsRegister {
-    pub zero: bool,
-    pub subtract: bool,
-    pub half_carry: bool,
-    pub carry: bool,
-}
-
 
 impl FlagsRegister {
     pub fn new() -> FlagsRegister {
@@ -46,12 +58,12 @@ impl FlagsRegister {
     }
 }
 
-impl convert::From<FlagsRegister> for u8  {
+impl convert::From<FlagsRegister> for u8 {
     fn from(flag: FlagsRegister) -> u8 {
-        (if flag.zero       { 1 } else { 0 }) << ZERO_FLAG_BYTE_POSITION |
-        (if flag.subtract   { 1 } else { 0 }) << SUBTRACT_FLAG_BYTE_POSITION |
-        (if flag.half_carry { 1 } else { 0 }) << HALF_CARRY_FLAG_BYTE_POSITION |
-        (if flag.carry      { 1 } else { 0 }) << CARRY_FLAG_BYTE_POSITION
+        (if flag.zero { 1 } else { 0 }) << ZERO_FLAG_BYTE_POSITION
+            | (if flag.subtract { 1 } else { 0 }) << SUBTRACT_FLAG_BYTE_POSITION
+            | (if flag.half_carry { 1 } else { 0 }) << HALF_CARRY_FLAG_BYTE_POSITION
+            | (if flag.carry { 1 } else { 0 }) << CARRY_FLAG_BYTE_POSITION
     }
 }
 
@@ -66,7 +78,7 @@ impl convert::From<u8> for FlagsRegister {
             zero,
             subtract,
             half_carry,
-            carry
+            carry,
         }
     }
 }
