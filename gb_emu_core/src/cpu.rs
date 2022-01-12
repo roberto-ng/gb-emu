@@ -1,9 +1,14 @@
 use std::u8;
 
 use crate::cpu_registers::*;
-use crate::instruction::*;
+use crate::instruction::{
+    Instruction,
+    Info as InstructionInfo,
+    ArithmeticTarget,
+    JumpTest,
+};
 
-struct CPU {
+pub struct Cpu {
     registers: Registers,
     bus: MemoryBus,
     pc: u16,
@@ -14,27 +19,27 @@ struct MemoryBus {
 }
 
 impl MemoryBus {
-    fn new() -> MemoryBus {
+    pub fn new() -> MemoryBus {
         MemoryBus {
             memory: [0; 0xFFFF],
         }
     }
 
-    fn read_byte(&self, address: u16) -> u8 {
+    pub fn read_byte(&self, address: u16) -> u8 {
         self.memory[address as usize]
     }
 }
 
-impl CPU {
-    fn new() -> CPU {
-        CPU {
+impl Cpu {
+    pub fn new() -> Cpu {
+        Cpu {
             registers: Registers::new(),
             bus: MemoryBus::new(),
             pc: 0,
         }
     }
 
-    fn step(&mut self) {
+    pub fn step(&mut self) {
         let mut instruction_byte = self.bus.read_byte(self.pc);
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
@@ -59,7 +64,7 @@ impl CPU {
         }
     }
 
-    fn get_arithmetic_target(&self, target: &ArithmeticTarget) -> u8 {
+    const fn get_arithmetic_target(&self, target: &ArithmeticTarget) -> u8 {
         match target {
             ArithmeticTarget::A => self.registers.a,
             ArithmeticTarget::B => self.registers.b,
