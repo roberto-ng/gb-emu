@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Info {
+pub struct Data {
     pub bytes: u8,
     pub cycles: u8,
     // The duration of conditional calls and returns is different when action is taken or not
@@ -10,8 +10,8 @@ pub struct Info {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Instruction {
-    ADD (ArithmeticTarget, Info),
-    JP (JumpTest, Info),
+    ADD (ArithmeticTarget, Data),
+    JP (JumpTest, Data),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -34,9 +34,9 @@ pub enum JumpTest {
     Always,
 }
 
-impl Info {
-    const fn new(bytes: u8, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Info {
-        Info {
+impl Data {
+    const fn new(bytes: u8, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
+        Data {
             bytes,
             cycles,
             action_cycles,
@@ -64,67 +64,67 @@ impl Instruction {
             0x80 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::B,
-                    Info::new(1, 4, None, byte),
+                    Data::new(1, 4, None, byte),
                 )
             ),
             0x81 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::C,
-                    Info::new(1, 4, None, byte),
+                    Data::new(1, 4, None, byte),
                 )
             ),
             0x82 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::D,
-                    Info::new(1, 4, None, byte),
+                    Data::new(1, 4, None, byte),
                 )
             ),
             0x83 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::E,
-                    Info::new(1, 4, None, byte),
+                    Data::new(1, 4, None, byte),
                 )
             ),
             0x84 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::H,
-                    Info::new(1, 4, None, byte),
+                    Data::new(1, 4, None, byte),
                 )
             ),
             0x85 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::L,
-                    Info::new(1, 4, None, byte),
+                    Data::new(1, 4, None, byte),
                 )
             ),
             0xC2 => Some(
                 Instruction::JP (
                     JumpTest::NotZero,
-                    Info::new(3, 12, Some(16), byte),
+                    Data::new(3, 12, Some(16), byte),
                 )
             ),
             0xC3 => Some(
                 Instruction::JP (
                     JumpTest::Always,
-                    Info::new(3, 16, None, byte),
+                    Data::new(3, 16, None, byte),
                 )
             ),
             0xCA => Some(
                 Instruction::JP (
                     JumpTest::Zero,
-                    Info::new(3, 12, Some(16), byte),
+                    Data::new(3, 12, Some(16), byte),
                 )
             ),
             0xD2 => Some(
                 Instruction::JP (
                     JumpTest::NotCarry,
-                    Info::new(3, 12, Some(16), byte),
+                    Data::new(3, 12, Some(16), byte),
                 )
             ),
             0xDA => Some(
                 Instruction::JP (
                     JumpTest::Carry,
-                    Info::new(3, 12, Some(16), byte),
+                    Data::new(3, 12, Some(16), byte),
                 )
             ),
             /*
