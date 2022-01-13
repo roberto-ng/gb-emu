@@ -2,10 +2,10 @@ use std::u8;
 
 use crate::cpu_registers::*;
 use crate::instruction::{
-    Instruction,
-    Info as InstructionInfo,
-    ArithmeticTarget,
-    JumpTest,
+    ArithmeticTarget, 
+    Info as InstructionInfo, 
+    Instruction, 
+    JumpTest
 };
 
 pub struct Cpu {
@@ -58,9 +58,9 @@ impl Cpu {
 
     fn execute(&mut self, instruction: &Instruction) -> u16 {
         match instruction {
-            Instruction::ADD { target, info } => self.add(target, info),
-            Instruction::JP { test, info } => self.jp(test, info),
-            _ => self.pc,
+            Instruction::ADD(target, info) => self.add(target, info),
+            Instruction::JP(test, info) => self.jp(test, info),
+            //_ => self.pc,
         }
     }
 
