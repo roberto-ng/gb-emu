@@ -10,8 +10,15 @@ pub struct Data {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Instruction {
-    ADD (ArithmeticTarget, Data),
-    JP (JumpTest, Data),
+    ADD(ArithmeticTarget, Data),
+    JP(JumpTest, Data),
+    LD(LoadType, Data),
+    PUSH(StackTarget, Data),
+    POP(StackTarget, Data),
+    CALL(JumpTest, Data),
+    RET(JumpTest, Data),
+    NOP(Data),
+    Halt(Data),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -32,6 +39,29 @@ pub enum JumpTest {
     NotCarry,
     Carry,
     Always,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+
+pub enum LoadByteTarget {
+    A, B, C, D, E, H, L, HLI,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+
+pub enum LoadByteSource {
+    A, B, C, D, E, H, L, D8, HLI,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+
+pub enum LoadType {
+    Byte(LoadByteTarget, LoadByteSource)
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum StackTarget {
+    BC,
 }
 
 impl Data {
@@ -55,7 +85,7 @@ impl Instruction {
         }
     }
 
-    const fn from_byte_prefixed(byte: u8) -> Option<Instruction> {
+    const fn from_byte_prefixed(_byte: u8) -> Option<Instruction> {
         None
     }
 
@@ -67,66 +97,77 @@ impl Instruction {
                     Data::new(1, 4, None, byte),
                 )
             ),
+            
             0x81 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::C,
                     Data::new(1, 4, None, byte),
                 )
             ),
+            
             0x82 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::D,
                     Data::new(1, 4, None, byte),
                 )
             ),
+            
             0x83 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::E,
                     Data::new(1, 4, None, byte),
                 )
             ),
+            
             0x84 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::H,
                     Data::new(1, 4, None, byte),
                 )
             ),
+            
             0x85 => Some(
                 Instruction::ADD (
                     ArithmeticTarget::L,
                     Data::new(1, 4, None, byte),
                 )
             ),
+            
             0xC2 => Some(
                 Instruction::JP (
                     JumpTest::NotZero,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
+            
             0xC3 => Some(
                 Instruction::JP (
                     JumpTest::Always,
                     Data::new(3, 16, None, byte),
                 )
             ),
+            
             0xCA => Some(
                 Instruction::JP (
                     JumpTest::Zero,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
+
             0xD2 => Some(
                 Instruction::JP (
                     JumpTest::NotCarry,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
+
             0xDA => Some(
                 Instruction::JP (
                     JumpTest::Carry,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
+
             /*
             0xE9 => Some(Instruction::JP {
                 test: JumpTest::Always,
@@ -134,6 +175,7 @@ impl Instruction {
                 info: InstructionInfo::new(1, 4, None),
             }),
             */
+
             _ => None,
         }
     }

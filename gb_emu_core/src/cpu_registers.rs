@@ -49,7 +49,7 @@ impl Registers {
         self.f = ((value & 0xFF) as u8).into();
     }
 
-    pub fn get_bc(&self) -> u16 {
+    pub const fn get_bc(&self) -> u16 {
         (self.b as u16) << 8 | (self.c as u16)
     }
 
@@ -58,7 +58,7 @@ impl Registers {
         self.c = (value & 0xFF) as u8;
     }
 
-    pub fn get_de(&self) -> u16 {
+    pub const fn get_de(&self) -> u16 {
         (self.d as u16) << 8 | (self.e as u16)
     }
 
@@ -67,7 +67,7 @@ impl Registers {
         self.e = (value & 0xFF) as u8;
     }
 
-    pub fn get_hl(&self) -> u16 {
+    pub const fn get_hl(&self) -> u16 {
         (self.h as u16) << 8 | (self.l as u16)
     }
 
