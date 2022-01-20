@@ -1,41 +1,55 @@
 use std::u8;
 
+use crate::gpu::*;
 use crate::cpu_registers::*;
-use crate::instruction::{
-    ArithmeticTarget, 
-    Instruction, 
-    JumpTest, 
-    LoadType, 
-    LoadByteSource, 
-    LoadByteTarget,
-    StackTarget,
-};
+use crate::instruction::*;
 
 pub struct Cpu {
     registers: Registers,
     bus: MemoryBus,
     pc: u16,
     sp: u16,
+    cycles: u8,
     is_halted: bool,
 }
 
 struct MemoryBus {
     memory: [u8; 0xFFFF],
+    gpu: Gpu,
 }
 
 impl MemoryBus {
     pub fn new() -> MemoryBus {
         MemoryBus {
             memory: [0; 0xFFFF],
+            gpu: Gpu::new(),
         }
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
-        self.memory[address as usize]
+        let address = address as usize;
+        match address {
+            VRAM_BEGIN ..= VRAM_END => {
+                self.gpu.read_vram(address)
+            }
+
+            _ => {
+                self.memory[address]
+            }
+        }
     }
 
     pub fn write_byte(&mut self, address: u16, value: u8) {
-        self.memory[address as usize] = value;
+        let address = address as usize;
+        match address {
+            VRAM_BEGIN ..= VRAM_END => {
+                self.gpu.write_vram(address, value);
+            }
+            
+            _ => {
+                self.memory[address] = value;
+            }
+        }
     }
 }
 
@@ -46,6 +60,7 @@ impl Cpu {
             bus: MemoryBus::new(),
             pc: 0,
             sp: 0,
+            cycles: 0,
             is_halted: false,
         }
     }
@@ -60,16 +75,17 @@ impl Cpu {
 
         match Instruction::from_byte(instruction_byte, prefixed) {
             Some(instruction) => {
-                let next_pc = self.execute(&instruction);
+                let (next_pc, cycles) = self.execute(&instruction);
                 self.pc = next_pc;
+                self.cycles += cycles;
             }
             None => panic!("Unkown instruction found: 0x{:X}", instruction_byte),
         };
     }
 
-    fn execute(&mut self, instruction: &Instruction) -> u16 {
+    fn execute(&mut self, instruction: &Instruction) -> (u16, u8) {
         if self.is_halted {
-            return self.pc;
+            return (self.pc, 0);
         }
 
         match instruction {
@@ -89,7 +105,9 @@ impl Cpu {
                 self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
 
                 self.registers.a = new_value;
-                self.pc.wrapping_add(data.bytes as u16)
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
             }
 
             Instruction::JP(test, data) => {
@@ -97,13 +115,16 @@ impl Cpu {
                 if should_jump {
                     let low_byte = self.bus.read_byte(self.pc + 1) as u16;
                     let high_byte = self.bus.read_byte(self.pc + 2) as u16;
-                    (high_byte << 8) | low_byte
+                    let next_pc = (high_byte << 8) | low_byte;
+                    let cycles = data.action_cycles.expect("JP has no action cycles data");
+                    (next_pc, cycles)
                 } else {
-                    self.pc.wrapping_add(data.bytes as u16)
+                    let next_pc = self.pc.wrapping_add(data.bytes);
+                    (next_pc, data.cycles)
                 }
             }
             
-            Instruction::LD(load_type, _data) => {
+            Instruction::LD(load_type, data) => {
                 match load_type {
                     LoadType::Byte(target, source) => {
                         let value = self.get_load_byte_source(source);
@@ -121,10 +142,8 @@ impl Cpu {
                             _ => { panic!("TODO: implement other sources") },
                         }
         
-                        match source {
-                            LoadByteSource::D8 => self.pc.wrapping_add(2),
-                            _                  => self.pc.wrapping_add(1),
-                        }
+                        let next_pc = self.pc.wrapping_add(data.bytes);
+                        (next_pc, data.cycles)
                     }
 
                     // implement other load types
@@ -138,7 +157,9 @@ impl Cpu {
                 };
 
                 self.push(value);
-                self.pc.wrapping_add(data.bytes as u16)
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
             }
             
             Instruction::POP(target, data) => {
@@ -147,29 +168,40 @@ impl Cpu {
                     StackTarget::BC => self.registers.set_bc(result),
                 };
 
-                self.pc.wrapping_add(data.bytes as u16)
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
             }
 
-            Instruction::CALL(test, _data) => {
+            Instruction::CALL(test, data) => {
                 // call a subroutine/function
                 let should_jump = self.perform_jump_test(test);
-                self.call(should_jump)
+                self.call(should_jump, data)
             }
 
-            Instruction::RET(test, _data) => {
+            Instruction::RET(test, data) => {
                 // return from a subroutine/function
                 let should_jump = self.perform_jump_test(test);
-                self.ret(should_jump)
+                let next_pc = self.ret(should_jump);
+                let cycles = if should_jump {
+                    data.action_cycles.expect("This RET instrunction has no action cycles data")
+                } else {
+                    data.cycles
+                };
+
+                (next_pc, cycles)
             }
 
             Instruction::NOP(data) => {
                 // do nothing ¯\_(ツ)_/¯
-                self.pc.wrapping_add(data.bytes as u16)
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
             }
 
             Instruction::Halt(data) => {
                 self.is_halted = true;
-                self.pc.wrapping_add(data.bytes as u16)
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
             }
         }
     }
@@ -197,13 +229,14 @@ impl Cpu {
     }
 
     #[inline(always)]
-    fn call(&mut self, should_jump: bool) -> u16 {
+    fn call(&mut self, should_jump: bool, data: &Data) -> (u16, u8) {
         let next_pc = self.pc.wrapping_add(3);
         if should_jump {
+            let cycles = data.action_cycles.expect("CALL instruction has no action cycles data");
             self.push(next_pc);
-            self.read_next_word()
+            (self.read_next_word(), cycles)
         } else {
-            next_pc
+            (next_pc, data.cycles)
         }
     }
 

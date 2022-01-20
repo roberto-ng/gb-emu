@@ -1,6 +1,6 @@
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Data {
-    pub bytes: u8,
+    pub bytes: u16,
     pub cycles: u8,
     // The duration of conditional calls and returns is different when action is taken or not
     pub action_cycles: Option<u8>,
@@ -65,7 +65,7 @@ pub enum StackTarget {
 }
 
 impl Data {
-    const fn new(bytes: u8, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
+    const fn new(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
         Data {
             bytes,
             cycles,
