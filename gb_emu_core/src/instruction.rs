@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 pub struct Data {
     pub bytes: u16,
     pub cycles: u8,
@@ -8,7 +8,7 @@ pub struct Data {
     pub is_prefixed: bool,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 pub enum Instruction {
     ADD(ArithmeticTarget, Data),
     JP(JumpTest, Data),
@@ -21,7 +21,7 @@ pub enum Instruction {
     Halt(Data),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 pub enum ArithmeticTarget {
     A,
     B,
@@ -32,7 +32,7 @@ pub enum ArithmeticTarget {
     L,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 pub enum JumpTest {
     NotZero,
     Zero,
@@ -41,25 +41,25 @@ pub enum JumpTest {
     Always,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 
 pub enum LoadByteTarget {
     A, B, C, D, E, H, L, HLI,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 
 pub enum LoadByteSource {
     A, B, C, D, E, H, L, D8, HLI,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 
 pub enum LoadType {
     Byte(LoadByteTarget, LoadByteSource)
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug)]
 pub enum StackTarget {
     BC,
 }
@@ -81,8 +81,10 @@ impl Data {
             None => {
                 panic!(
                     "The instruction with opcode {:#06X} has no data about its amount of action cycles but \
-                    it's still trying to use this data. This shouldn't happen",
-                    self.opcode
+                    it's still trying to use this data. This shouldn't happen.\
+                    \n{:?}",
+                    self.opcode,
+                    self,
                 );
             },
         }
