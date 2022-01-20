@@ -1,8 +1,6 @@
-use std::u8;
-
-use crate::gpu::*;
 use crate::cpu_registers::*;
 use crate::instruction::*;
+use crate::memory_bus::*;
 
 pub struct Cpu {
     registers: Registers,
@@ -11,46 +9,6 @@ pub struct Cpu {
     sp: u16,
     cycles: u8,
     is_halted: bool,
-}
-
-struct MemoryBus {
-    memory: [u8; 0xFFFF],
-    gpu: Gpu,
-}
-
-impl MemoryBus {
-    pub fn new() -> MemoryBus {
-        MemoryBus {
-            memory: [0; 0xFFFF],
-            gpu: Gpu::new(),
-        }
-    }
-
-    pub fn read_byte(&self, address: u16) -> u8 {
-        let address = address as usize;
-        match address {
-            VRAM_BEGIN ..= VRAM_END => {
-                self.gpu.read_vram(address)
-            }
-
-            _ => {
-                self.memory[address]
-            }
-        }
-    }
-
-    pub fn write_byte(&mut self, address: u16, value: u8) {
-        let address = address as usize;
-        match address {
-            VRAM_BEGIN ..= VRAM_END => {
-                self.gpu.write_vram(address, value);
-            }
-            
-            _ => {
-                self.memory[address] = value;
-            }
-        }
-    }
 }
 
 impl Cpu {
@@ -69,7 +27,7 @@ impl Cpu {
         let mut instruction_byte = self.bus.read_byte(self.pc);
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
-            // if this is a prefixed instruction, read the next byte
+            // if this is a prefixed instruction, read the next byte instead
             instruction_byte = self.bus.read_byte(self.pc + 1);
         }
 
@@ -233,7 +191,7 @@ impl Cpu {
         let next_pc = self.pc.wrapping_add(3);
         if should_jump {
             self.push(next_pc);
-            
+
             let cycles = data.get_action_cycles();
             (self.read_next_word(), cycles)
         } else {
