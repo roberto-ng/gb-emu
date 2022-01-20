@@ -116,7 +116,7 @@ impl Cpu {
                     let low_byte = self.bus.read_byte(self.pc + 1) as u16;
                     let high_byte = self.bus.read_byte(self.pc + 2) as u16;
                     let next_pc = (high_byte << 8) | low_byte;
-                    let cycles = data.action_cycles.expect("JP has no action cycles data");
+                    let cycles = data.get_action_cycles();
                     (next_pc, cycles)
                 } else {
                     let next_pc = self.pc.wrapping_add(data.bytes);
@@ -183,7 +183,7 @@ impl Cpu {
                 let should_jump = self.perform_jump_test(test);
                 let next_pc = self.ret(should_jump);
                 let cycles = if should_jump {
-                    data.action_cycles.expect("This RET instrunction has no action cycles data")
+                    data.get_action_cycles()
                 } else {
                     data.cycles
                 };
@@ -232,8 +232,9 @@ impl Cpu {
     fn call(&mut self, should_jump: bool, data: &Data) -> (u16, u8) {
         let next_pc = self.pc.wrapping_add(3);
         if should_jump {
-            let cycles = data.action_cycles.expect("CALL instruction has no action cycles data");
             self.push(next_pc);
+            
+            let cycles = data.get_action_cycles();
             (self.read_next_word(), cycles)
         } else {
             (next_pc, data.cycles)

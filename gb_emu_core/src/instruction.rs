@@ -65,13 +65,26 @@ pub enum StackTarget {
 }
 
 impl Data {
-    const fn new(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
+    pub const fn new(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
         Data {
             bytes,
             cycles,
             action_cycles,
             opcode,
             is_prefixed: false,
+        }
+    }
+
+    pub fn get_action_cycles(&self) -> u8 {
+        match self.action_cycles {
+            Some(action_cycles) => action_cycles,
+            None => {
+                panic!(
+                    "The instruction with opcode {:#06X} has no data about its amount of action cycles but \
+                    it's still trying to use this data. This shouldn't happen",
+                    self.opcode
+                );
+            },
         }
     }
 }
