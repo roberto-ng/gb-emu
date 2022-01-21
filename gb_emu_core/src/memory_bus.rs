@@ -24,7 +24,11 @@ impl MemoryBus {
             }
 
             VRAM_BEGIN ..= VRAM_END => {
-                self.gpu.read_vram(address)
+                self.gpu.read_vram_byte(address)
+            }
+
+            OAM_BEGIN ..= OAM_END => {
+                self.gpu.read_oam_byte(address)
             }
 
             _ => {
@@ -42,7 +46,11 @@ impl MemoryBus {
             }
 
             VRAM_BEGIN ..= VRAM_END => {
-                self.gpu.write_vram(address, value)
+                self.gpu.write_vram_byte(address, value)
+            }
+
+            OAM_BEGIN ..= OAM_END => {
+                self.gpu.write_oam_byte(address, value)
             }
             
             _ => {

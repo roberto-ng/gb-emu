@@ -28,7 +28,6 @@ impl Cartridge for RomOnlyCartridge {
 
             _ => {
                 Err(EmulationError::InvalidMemoryRead { address })
-                //panic!("Invalid cartridge read on address {address:#06X}");
             }
         }
     }

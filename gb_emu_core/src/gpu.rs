@@ -1,11 +1,8 @@
 use crate::Result;
 
-pub const VRAM_BEGIN: usize = 0x8000;
-pub const VRAM_END: usize = 0x9FFF;
-pub const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
-
 pub struct Gpu {
     vram: [u8; VRAM_SIZE],
+    oam: [u8; OAM_SIZE],
     tile_set: [Tile; 0x180],
 }
 
@@ -27,15 +24,21 @@ impl Gpu {
     pub fn new() -> Gpu {
         Gpu { 
             vram: [0; VRAM_SIZE], 
-            tile_set: [empty_tile(); 0x180] 
+            oam: [0; OAM_SIZE],
+            tile_set: [empty_tile(); 0x180],
         }
     }
 
-    pub fn read_vram(&self, address: usize) -> Result<u8> {
+    pub fn read_vram_byte(&self, address: usize) -> Result<u8> {
+        // get relative address
+        let address = address - VRAM_BEGIN;
         Ok(self.vram[address])
     }
 
-    pub fn write_vram(&mut self, address: usize, value: u8) -> Result<()> {
+    pub fn write_vram_byte(&mut self, address: usize, value: u8) -> Result<()> {
+        // get relative address
+        let address = address - VRAM_BEGIN;
+
         self.vram[address] = value;
 
         // If our address is greater than 0x1800, we're not writing to the tile set storage
@@ -98,4 +101,26 @@ impl Gpu {
 
         Ok(())
     }
+
+    pub fn read_oam_byte(&self, address: usize) -> Result<u8> {
+        // get relative address
+        let address = address - OAM_BEGIN;
+        Ok(self.oam[address])
+    }
+
+    pub fn write_oam_byte(&mut self, address: usize, value: u8) -> Result<()> {
+        // get relative address
+        let address = address - OAM_BEGIN;
+        self.oam[address] = value;
+
+        Ok(())
+    }
 }
+
+pub const VRAM_BEGIN: usize = 0x8000;
+pub const VRAM_END: usize = 0x9FFF;
+pub const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
+
+pub const OAM_BEGIN: usize = 0xFE00;
+pub const OAM_END: usize = 0xFE9F;
+pub const OAM_SIZE: usize = OAM_END - OAM_BEGIN + 1;
