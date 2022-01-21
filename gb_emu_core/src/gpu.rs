@@ -1,3 +1,5 @@
+use crate::Result;
+
 pub const VRAM_BEGIN: usize = 0x8000;
 pub const VRAM_END: usize = 0x9FFF;
 pub const VRAM_SIZE: usize = VRAM_END - VRAM_BEGIN + 1;
@@ -29,16 +31,16 @@ impl Gpu {
         }
     }
 
-    pub fn read_vram(&self, address: usize) -> u8 {
-        self.vram[address]
+    pub fn read_vram(&self, address: usize) -> Result<u8> {
+        Ok(self.vram[address])
     }
 
-    pub fn write_vram(&mut self, address: usize, value: u8) {
+    pub fn write_vram(&mut self, address: usize, value: u8) -> Result<()> {
         self.vram[address] = value;
 
         // If our address is greater than 0x1800, we're not writing to the tile set storage
         // so we can just return.
-        if address >= 0x1800 { return }
+        if address >= 0x1800 { return Ok(()) }
 
         // Tiles rows are encoded in two bytes with the first byte always
         // on an even address. Bitwise ANDing the address with 0xffe
@@ -93,5 +95,7 @@ impl Gpu {
 
             self.tile_set[tile_index][row_index][pixel_index] = value;
         }
+
+        Ok(())
     }
 }

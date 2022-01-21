@@ -1,6 +1,8 @@
+use crate::EmulationError;
 use crate::cpu_registers::*;
 use crate::instruction::*;
 use crate::memory_bus::*;
+use crate::Result;
 
 pub struct Cpu {
     registers: Registers,
@@ -23,30 +25,37 @@ impl Cpu {
         }
     }
 
-    pub fn step(&mut self) {
-        let mut instruction_byte = self.bus.read_byte(self.pc);
+    pub fn step(&mut self) -> Result<()> {
+        let mut instruction_byte = self.bus.read_byte(self.pc)?;
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
             // if this is a prefixed instruction, read the next byte instead
-            instruction_byte = self.bus.read_byte(self.pc + 1);
+            instruction_byte = self.bus.read_byte(self.pc + 1)?;
         }
 
         match Instruction::from_byte(instruction_byte, prefixed) {
             Some(instruction) => {
-                let (next_pc, cycles) = self.execute(&instruction);
+                let (next_pc, cycles) = self.execute(&instruction)?;
                 self.pc = next_pc;
                 self.cycles += cycles;
+                Ok(())
             }
-            None => panic!("Unkown instruction found: 0x{:X}", instruction_byte),
-        };
+            None => {
+                let err = EmulationError::UnknownOpcode {
+                    opcode: instruction_byte,
+                    is_prefixed: prefixed,
+                };
+                Err(err)
+            },
+        }
     }
 
-    fn execute(&mut self, instruction: &Instruction) -> (u16, u8) {
+    fn execute(&mut self, instruction: &Instruction) -> Result<(u16, u8)> {
         if self.is_halted {
-            return (self.pc, 0);
+            return Ok((self.pc, 0));
         }
 
-        match instruction {
+        let result = match instruction {
             Instruction::ADD(target, data) => {
                 let a = self.registers.a;
                 let value = self.get_arithmetic_target(target);
@@ -71,8 +80,8 @@ impl Cpu {
             Instruction::JP(test, data) => {
                 let should_jump = self.perform_jump_test(test);
                 if should_jump {
-                    let low_byte = self.bus.read_byte(self.pc + 1) as u16;
-                    let high_byte = self.bus.read_byte(self.pc + 2) as u16;
+                    let low_byte = self.bus.read_byte(self.pc + 1)? as u16;
+                    let high_byte = self.bus.read_byte(self.pc + 2)? as u16;
                     let next_pc = (high_byte << 8) | low_byte;
                     let cycles = data.get_action_cycles();
                     (next_pc, cycles)
@@ -85,7 +94,7 @@ impl Cpu {
             Instruction::LD(load_type, data) => {
                 match load_type {
                     LoadType::Byte(target, source) => {
-                        let value = self.get_load_byte_source(source);
+                        let value = self.get_load_byte_source(source)?;
         
                         match target {
                             LoadByteTarget::A => {
@@ -94,7 +103,7 @@ impl Cpu {
                             
                             LoadByteTarget::HLI => {
                                 let address = self.registers.get_hl();
-                                self.bus.write_byte(address, value);
+                                self.bus.write_byte(address, value)?;
                             }
 
                             _ => { panic!("TODO: implement other sources") },
@@ -114,14 +123,14 @@ impl Cpu {
                     // TODO: support more targets
                 };
 
-                self.push(value);
+                self.push(value)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
             
             Instruction::POP(target, data) => {
-                let result = self.pop();
+                let result = self.pop()?;
                 match target {
                     StackTarget::BC => self.registers.set_bc(result),
                 };
@@ -133,13 +142,13 @@ impl Cpu {
             Instruction::CALL(test, data) => {
                 // call a subroutine/function
                 let should_jump = self.perform_jump_test(test);
-                self.call(should_jump, data)
+                self.call(should_jump, data)?
             }
 
             Instruction::RET(test, data) => {
                 // return from a subroutine/function
                 let should_jump = self.perform_jump_test(test);
-                let next_pc = self.ret(should_jump);
+                let next_pc = self.ret(should_jump)?;
                 let cycles = if should_jump {
                     data.get_action_cycles()
                 } else {
@@ -161,50 +170,57 @@ impl Cpu {
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
-        }
+        };
+
+        Ok(result)
     }
 
     #[inline(always)]
-    fn push(&mut self, value: u16) {
+    fn push(&mut self, value: u16) -> Result<()> {
         let byte = (value & 0xFF00) >> 8;
         self.pc = self.pc.wrapping_sub(1);
-        self.bus.write_byte(self.sp, byte as u8);
+        self.bus.write_byte(self.sp, byte as u8)?;
 
         let byte = value & 0xFF;
         self.pc = self.pc.wrapping_sub(1);
-        self.bus.write_byte(self.sp, byte as u8)
+        self.bus.write_byte(self.sp, byte as u8)?;
+
+        Ok(())
     }
 
     #[inline(always)]
-    fn pop(&mut self) -> u16 {
-        let lsb = self.bus.read_byte(self.sp) as u16;
+    fn pop(&mut self) -> Result<u16> {
+        let lsb = self.bus.read_byte(self.sp)? as u16;
         self.sp = self.sp.wrapping_add(1);
 
-        let msb = self.bus.read_byte(self.sp) as u16;
+        let msb = self.bus.read_byte(self.sp)? as u16;
         self.sp = self.sp.wrapping_add(1);
 
-        (msb << 8) | lsb
+        let result = (msb << 8) | lsb;
+        Ok(result)
     }
 
     #[inline(always)]
-    fn call(&mut self, should_jump: bool, data: &Data) -> (u16, u8) {
+    fn call(&mut self, should_jump: bool, data: &Data) -> Result<(u16, u8)> {
         let next_pc = self.pc.wrapping_add(3);
-        if should_jump {
-            self.push(next_pc);
+        let result = if should_jump {
+            self.push(next_pc)?;
 
             let cycles = data.get_action_cycles();
-            (self.read_next_word(), cycles)
+            (self.read_next_word()?, cycles)
         } else {
             (next_pc, data.cycles)
-        }
+        };
+
+        Ok(result)
     }
 
     #[inline(always)]
-    fn ret(&mut self, should_jump: bool) -> u16 {
+    fn ret(&mut self, should_jump: bool) -> Result<u16> {
         if should_jump {
             self.pop()
         } else {
-            self.pc.wrapping_add(1)
+            Ok(self.pc.wrapping_add(1))
         }
     }
 
@@ -233,24 +249,28 @@ impl Cpu {
     }
 
     #[inline(always)]
-    fn get_load_byte_source(&self, source: &LoadByteSource) -> u8 {
-        match source {
+    fn get_load_byte_source(&self, source: &LoadByteSource) -> Result<u8> {
+        let byte = match source {
             LoadByteSource::A => self.registers.a,
-            LoadByteSource::D8 => self.read_next_byte(),
-            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl()),
+            LoadByteSource::D8 => self.read_next_byte()?,
+            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl())?,
             _ => { panic!("TODO: implement other sources") },
-        }
+        };
+
+        Ok(byte)
     }
 
     #[inline(always)]
-    pub fn read_next_byte(&self) -> u8 {
+    pub fn read_next_byte(&self) -> Result<u8> {
         self.bus.read_byte(self.pc + 1)
     }
 
     #[inline(always)]
-    pub fn read_next_word(&self) -> u16 {
-        let lsb = self.bus.read_byte(self.pc + 1) as u16;
-        let msb = self.bus.read_byte(self.pc + 2) as u16;
-        (msb << 8) | lsb
+    pub fn read_next_word(&self) -> Result<u16> {
+        let lsb = self.bus.read_byte(self.pc + 1)? as u16;
+        let msb = self.bus.read_byte(self.pc + 2)? as u16;
+        let next_word = (msb << 8) | lsb;
+
+        Ok(next_word)
     }
 }

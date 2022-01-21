@@ -1,10 +1,11 @@
 pub mod rom_only;
 
-pub trait Cartridge {
-    fn read_byte(&self, address: usize) -> u8;
-    fn write_byte(&self, address: usize, value: u8);
-}
+use crate::Result;
 
+pub trait Cartridge {
+    fn read_byte(&self, address: usize) -> Result<u8>;
+    fn write_byte(&self, address: usize, value: u8) -> Result<()>;
+}
 
 pub const ROM_BANK_0_START: usize = 0x0000;
 pub const ROM_BANK_0_END: usize = 0x3FFF;

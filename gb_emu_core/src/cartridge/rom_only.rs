@@ -1,4 +1,5 @@
 use crate::cartridge::*;
+use crate::{Result, EmulationError};
 
 pub struct RomOnlyCartridge {
     rom_bank_0: [u8; ROM_BANK_0_SIZE],
@@ -15,21 +16,24 @@ impl RomOnlyCartridge {
 }
 
 impl Cartridge for RomOnlyCartridge {
-    fn read_byte(&self, address: usize) -> u8 {
+    fn read_byte(&self, address: usize) -> Result<u8> {
         match address {
             ROM_BANK_0_START ..= ROM_BANK_0_END => {
-                self.rom_bank_0[address]
+                Ok(self.rom_bank_0[address])
             }
 
             ROM_BANK_N_START ..= ROM_BANK_N_END => {
-                self.rom_bank_n[address]
+                Ok(self.rom_bank_n[address])
             }
 
             _ => {
-                panic!("Invalid cartridge read on address {address:#06X}");
+                Err(EmulationError::InvalidMemoryRead { address })
+                //panic!("Invalid cartridge read on address {address:#06X}");
             }
         }
     }
 
-    fn write_byte(&self, _address: usize, _value: u8) {}    
+    fn write_byte(&self, _address: usize, _value: u8) -> Result<()> {
+        Ok(())
+    }    
 }
