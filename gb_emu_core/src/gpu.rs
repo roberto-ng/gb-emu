@@ -30,15 +30,10 @@ impl Gpu {
     }
 
     pub fn read_vram_byte(&self, address: usize) -> Result<u8> {
-        // get relative address
-        let address = address - VRAM_BEGIN;
         Ok(self.vram[address])
     }
 
     pub fn write_vram_byte(&mut self, address: usize, value: u8) -> Result<()> {
-        // get relative address
-        let address = address - VRAM_BEGIN;
-
         self.vram[address] = value;
 
         // If our address is greater than 0x1800, we're not writing to the tile set storage
@@ -103,14 +98,10 @@ impl Gpu {
     }
 
     pub fn read_oam_byte(&self, address: usize) -> Result<u8> {
-        // get relative address
-        let address = address - OAM_BEGIN;
         Ok(self.oam[address])
     }
 
     pub fn write_oam_byte(&mut self, address: usize, value: u8) -> Result<()> {
-        // get relative address
-        let address = address - OAM_BEGIN;
         self.oam[address] = value;
 
         Ok(())
