@@ -8,6 +8,7 @@ pub struct MemoryBus {
     cartridge: Box<dyn Cartridge>,
     work_ram_0: [u8; WORK_RAM_0_SIZE],
     work_ram_1: [u8; WORK_RAM_N_SIZE],
+    high_ram: [u8; HIGH_RAM_SIZE],
 }
 
 impl MemoryBus {
@@ -17,6 +18,7 @@ impl MemoryBus {
             cartridge: Box::new(RomOnlyCartridge::new()),
             work_ram_0: [0; WORK_RAM_0_SIZE],
             work_ram_1: [0; WORK_RAM_N_SIZE],
+            high_ram: [0; HIGH_RAM_SIZE],
         }
     }
 
@@ -30,11 +32,7 @@ impl MemoryBus {
             VRAM_BEGIN ..= VRAM_END => {
                 self.gpu.read_byte_vram(address)
             }
-
-            OAM_BEGIN ..= OAM_END => {
-                self.gpu.read_byte_oam(address)
-            }
-
+        
             EXTERNAL_RAM_START ..= EXTERNAL_RAM_END => {
                 self.cartridge.read_byte_external_ram(address)
             }
@@ -47,6 +45,25 @@ impl MemoryBus {
             WORK_RAM_N_START ..= WORK_RAM_N_END => {
                 let pos = address - WORK_RAM_N_START;
                 Ok(self.work_ram_1[pos])
+            }
+
+            ECHO_RAM_START ..= ECHO_RAM_END => {
+                // TODO: Implement echo ram
+                Ok(0)
+            }
+
+            OAM_BEGIN ..= OAM_END => {
+                self.gpu.read_byte_oam(address)
+            }
+
+            IO_REGISTERS_START ..= IO_REGISTERS_END => {
+                // TODO: Implement I/O registers
+                Ok(0)
+            }
+
+            HIGH_RAM_START ..= HIGH_RAM_END => {
+                let pos = address - HIGH_RAM_START;
+                Ok(self.high_ram[pos])
             }
 
             _ => {
@@ -67,12 +84,41 @@ impl MemoryBus {
                 self.gpu.write_byte_vram(address, value)
             }
 
+            EXTERNAL_RAM_START ..= EXTERNAL_RAM_START => {
+                self.cartridge.write_byte_external_ram(address, value)
+            }
+
+            WORK_RAM_0_START ..= WORK_RAM_0_END => {
+                let pos = address - WORK_RAM_0_START;
+                self.work_ram_0[pos] = value;
+                Ok(())
+            }
+
+            WORK_RAM_N_START ..= WORK_RAM_N_END => {
+                let pos = address - WORK_RAM_N_START;
+                self.work_ram_1[pos] = value;
+                Ok(())
+            }
+
+            ECHO_RAM_START ..= ECHO_RAM_END => {
+                // TODO: Implement echo ram
+                Ok(())
+            }
+
             OAM_BEGIN ..= OAM_END => {
                 self.gpu.write_byte_oam(address, value)
             }
 
-            EXTERNAL_RAM_START ..= EXTERNAL_RAM_START => {
-                self.cartridge.write_byte_external_ram(address, value)
+            IO_REGISTERS_START ..= IO_REGISTERS_END => {
+                // TODO: Implement I/O registers
+                Ok(())
+            }
+
+            HIGH_RAM_START ..= HIGH_RAM_END => {
+                let pos = address - HIGH_RAM_START;
+                self.high_ram[pos] = value;
+                
+                Ok(())
             }
             
             _ => {
@@ -90,3 +136,17 @@ pub const WORK_RAM_0_SIZE: usize = WORK_RAM_0_END - WORK_RAM_0_START + 1;
 pub const WORK_RAM_N_START: usize = 0xD000;
 pub const WORK_RAM_N_END: usize = 0xDFFF;
 pub const WORK_RAM_N_SIZE: usize = WORK_RAM_N_END - WORK_RAM_N_START + 1;
+
+pub const ECHO_RAM_START: usize = 0xE000;
+pub const ECHO_RAM_END: usize = 0xFDFF;
+pub const ECHO_RAM_SIZE: usize = ECHO_RAM_END - ECHO_RAM_START + 1;
+
+pub const IO_REGISTERS_START: usize = 0xFF00;
+pub const IO_REGISTERS_END: usize = 0xFF7F;
+pub const IO_REGISTERS_SIZE: usize = IO_REGISTERS_END - IO_REGISTERS_START + 1;
+
+pub const HIGH_RAM_START: usize = 0xFF80;
+pub const HIGH_RAM_END: usize = 0xFFFE;
+pub const HIGH_RAM_SIZE: usize = HIGH_RAM_END - HIGH_RAM_START + 1;
+
+pub const INTERRUPT_ENABLE_REGISTER: usize = 0xFFFF;
