@@ -9,6 +9,7 @@ pub struct MemoryBus {
     work_ram_0: [u8; WORK_RAM_0_SIZE],
     work_ram_1: [u8; WORK_RAM_N_SIZE],
     high_ram: [u8; HIGH_RAM_SIZE],
+    ie: u8,
 }
 
 impl MemoryBus {
@@ -19,6 +20,7 @@ impl MemoryBus {
             work_ram_0: [0; WORK_RAM_0_SIZE],
             work_ram_1: [0; WORK_RAM_N_SIZE],
             high_ram: [0; HIGH_RAM_SIZE],
+            ie: 0,
         }
     }
 
@@ -64,6 +66,10 @@ impl MemoryBus {
             HIGH_RAM_START ..= HIGH_RAM_END => {
                 let pos = address - HIGH_RAM_START;
                 Ok(self.high_ram[pos])
+            }
+
+            INTERRUPT_ENABLE_REGISTER => {
+                Ok(self.ie)
             }
 
             _ => {
@@ -117,6 +123,12 @@ impl MemoryBus {
             HIGH_RAM_START ..= HIGH_RAM_END => {
                 let pos = address - HIGH_RAM_START;
                 self.high_ram[pos] = value;
+                
+                Ok(())
+            }
+
+            INTERRUPT_ENABLE_REGISTER => {
+                self.ie = value;
                 
                 Ok(())
             }
