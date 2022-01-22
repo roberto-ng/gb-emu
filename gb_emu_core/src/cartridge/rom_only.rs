@@ -16,7 +16,7 @@ impl RomOnlyCartridge {
 }
 
 impl Cartridge for RomOnlyCartridge {
-    fn read_byte(&self, address: usize) -> Result<u8> {
+    fn read_byte_rom(&self, address: usize) -> Result<u8> {
         match address {
             ROM_BANK_0_START ..= ROM_BANK_0_END => {
                 Ok(self.rom_bank_0[address])
@@ -32,7 +32,15 @@ impl Cartridge for RomOnlyCartridge {
         }
     }
 
-    fn write_byte(&self, _address: usize, _value: u8) -> Result<()> {
-        Ok(())
+    fn write_byte_rom(&mut self, address: usize, value: u8) -> Result<()> {
+        Err(EmulationError::InvalidMemoryWrite { address, value })
+    }
+
+    fn read_byte_external_ram(&self, address: usize) -> Result<u8> {
+        Err(EmulationError::InvalidMemoryRead { address })
+    }
+
+    fn write_byte_external_ram(&mut self, address: usize, value: u8) -> Result<()> {
+        Err(EmulationError::InvalidMemoryWrite { address, value })
     }    
 }

@@ -29,12 +29,12 @@ impl Gpu {
         }
     }
 
-    pub fn read_vram_byte(&self, address: usize) -> Result<u8> {
+    pub fn read_byte_vram(&self, address: usize) -> Result<u8> {
         let vram_pos = address - VRAM_BEGIN;
         Ok(self.vram[vram_pos])
     }
 
-    pub fn write_vram_byte(&mut self, address: usize, value: u8) -> Result<()> {
+    pub fn write_byte_vram(&mut self, address: usize, value: u8) -> Result<()> {
         let vram_pos = address - VRAM_BEGIN;
         self.vram[vram_pos] = value;
 
@@ -99,12 +99,12 @@ impl Gpu {
         Ok(())
     }
 
-    pub fn read_oam_byte(&self, address: usize) -> Result<u8> {
+    pub fn read_byte_oam(&self, address: usize) -> Result<u8> {
         let oam_pos = address - OAM_BEGIN;
         Ok(self.oam[oam_pos])
     }
 
-    pub fn write_oam_byte(&mut self, address: usize, value: u8) -> Result<()> {
+    pub fn write_byte_oam(&mut self, address: usize, value: u8) -> Result<()> {
         let oam_pos = address - OAM_BEGIN;
         self.oam[oam_pos] = value;
 
