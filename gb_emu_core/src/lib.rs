@@ -9,24 +9,30 @@ use std::fmt;
 
 pub type Result<T> = std::result::Result<T, EmulationError>;
 
+#[derive(Debug)]
 pub enum EmulationError {
     InvalidMemoryRead { address: usize },
     InvalidMemoryWrite { address: usize, value: u8 },
     UnknownOpcode { opcode: u8, is_prefixed: bool },
+    InvalidRomIndex { index: usize, },
+    InvalidRom,
+    UnknownCartridgeType { code: u8, },
+    InvalidRomSizeCode { code: u8, },
+    InvalidRamSizeCode { code: u8, },
 }
 
 impl fmt::Display for EmulationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &EmulationError::InvalidMemoryRead { address } => {
+            &Self::InvalidMemoryRead { address } => {
                 write!(f, "Invalid cartridge read on address {:#06X}", address)
             }
 
-            &EmulationError::InvalidMemoryWrite { address, value } => {
+            &Self::InvalidMemoryWrite { address, value } => {
                 write!(f, "Invalid write read on address {:#06X} with value {:#06X}", address, value)
             }
 
-            &EmulationError::UnknownOpcode { opcode, is_prefixed } => {
+            &Self::UnknownOpcode { opcode, is_prefixed } => {
                 // text that says if the opcode is prefixed or not
                 let prefixed_or_not_text = if is_prefixed {
                     "prefixed"
@@ -35,6 +41,26 @@ impl fmt::Display for EmulationError {
                 };
 
                 write!(f, "Unknown opcode: {:#06X} {}", opcode, prefixed_or_not_text)
+            }
+
+            &Self::InvalidRomIndex { index } => {
+                write!(f, "ROM has no index {}", index)
+            }
+
+            &Self::InvalidRom => {
+                write!(f, "Invalid ROM")
+            }
+
+            &Self::UnknownCartridgeType { code } => {
+                write!(f, "Unknown cartridge type code with code {:#04X}", code)
+            }
+
+            &Self::InvalidRomSizeCode { code } => {
+                write!(f, "This ROM's header informs an invalid ROM size code {:#04X}", code)
+            }
+
+            &Self::InvalidRamSizeCode { code } => {
+                write!(f, "This ROM's header informs an invalid RAM size code {:#04X}", code)
             }
         }
     }
