@@ -30,21 +30,23 @@ impl Gpu {
     }
 
     pub fn read_vram_byte(&self, address: usize) -> Result<u8> {
-        Ok(self.vram[address])
+        let vram_pos = address - VRAM_BEGIN;
+        Ok(self.vram[vram_pos])
     }
 
     pub fn write_vram_byte(&mut self, address: usize, value: u8) -> Result<()> {
-        self.vram[address] = value;
+        let vram_pos = address - VRAM_BEGIN;
+        self.vram[vram_pos] = value;
 
         // If our address is greater than 0x1800, we're not writing to the tile set storage
         // so we can just return.
-        if address >= 0x1800 { return Ok(()) }
+        if vram_pos >= 0x1800 { return Ok(()) }
 
         // Tiles rows are encoded in two bytes with the first byte always
         // on an even address. Bitwise ANDing the address with 0xffe
         // gives us the address of the first byte.
         // For example: `12 & 0xFFFE == 12` and `13 & 0xFFFE == 12`
-        let normalized_index = address & 0xFFFE;
+        let normalized_index = vram_pos & 0xFFFE;
 
         // First we need to get the two bytes that encode the tile row.
         let byte1 = self.vram[normalized_index];
@@ -52,9 +54,9 @@ impl Gpu {
 
         // A tiles is 8 rows tall. Since each row is encoded with two bytes a tile
         // is therefore 16 bytes in total.
-        let tile_index = address / 16;
+        let tile_index = vram_pos / 16;
         // Every two bytes is a new row
-        let row_index = (address % 16) / 2;
+        let row_index = (vram_pos % 16) / 2;
 
         // Now we're going to loop 8 times to get the 8 pixels that make up a given row.
         for pixel_index in 0..8 {
@@ -98,11 +100,13 @@ impl Gpu {
     }
 
     pub fn read_oam_byte(&self, address: usize) -> Result<u8> {
-        Ok(self.oam[address])
+        let oam_pos = address - OAM_BEGIN;
+        Ok(self.oam[oam_pos])
     }
 
     pub fn write_oam_byte(&mut self, address: usize, value: u8) -> Result<()> {
-        self.oam[address] = value;
+        let oam_pos = address - OAM_BEGIN;
+        self.oam[oam_pos] = value;
 
         Ok(())
     }
