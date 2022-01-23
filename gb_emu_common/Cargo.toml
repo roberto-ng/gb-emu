@@ -1,0 +1,10 @@
+[package]
+name = "gb_emu_common"
+version = "0.1.0"
+authors = ["Roberto Nazareth"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num_enum = "0.5.6"
