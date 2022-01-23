@@ -13,15 +13,19 @@ pub struct MemoryBus {
 }
 
 impl MemoryBus {
-    pub fn new() -> MemoryBus {
-        MemoryBus {
-            gpu: Gpu::new(),
-            cartridge: Box::new(RomOnlyCartridge::new()),
-            work_ram_0: [0; WORK_RAM_0_SIZE],
-            work_ram_1: [0; WORK_RAM_N_SIZE],
-            high_ram: [0; HIGH_RAM_SIZE],
-            ie: 0,
-        }
+    pub fn new(rom: Vec<u8>) -> Result<MemoryBus> {
+        let header = read_rom_header(&rom)?;
+
+        Ok(
+            MemoryBus {
+                gpu: Gpu::new(),
+                cartridge: Box::new(RomOnlyCartridge::new(rom, header)?),
+                work_ram_0: [0; WORK_RAM_0_SIZE],
+                work_ram_1: [0; WORK_RAM_N_SIZE],
+                high_ram: [0; HIGH_RAM_SIZE],
+                ie: 0,
+            }
+        )
     }
 
     pub fn read_byte(&self, address: u16) -> Result<u8> {

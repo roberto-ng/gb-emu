@@ -68,11 +68,8 @@ impl fmt::Display for EmulationError {
 
 #[cfg(test)]
 mod tests {
-    use crate::cpu::Cpu;
-
     #[test]
     fn it_works() {
-        let _cpu = Cpu::new();
         assert_eq!(2 + 2, 4);
     }
 }

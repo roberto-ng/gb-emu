@@ -5,6 +5,9 @@ use std::convert::TryFrom;
 use crate::{Result, EmulationError};
 use num_enum::{TryFromPrimitive, IntoPrimitive};
 
+// each RAM bank has KiB of RAM
+type RamBank = [u8; 8_192];
+
 #[repr(u8)]
 #[derive(Clone, Copy, TryFromPrimitive, IntoPrimitive)]
 pub enum CartridgeType {
@@ -42,10 +45,10 @@ pub enum CartridgeType {
 pub struct Header {
     title: Option<String>,
     cartridge_type: CartridgeType,
-    rom_size: u32,
-    rom_banks: u16,
-    ram_size: u32,
-    ram_banks: u16,
+    rom_size: usize,
+    rom_bank_amount: usize,
+    ram_size: usize,
+    ram_bank_amount: usize,
 }
 
 pub trait Cartridge {
@@ -54,6 +57,9 @@ pub trait Cartridge {
 
     fn read_byte_external_ram(&self, address: usize) -> Result<u8>;
     fn write_byte_external_ram(&mut self, address: usize, value: u8) -> Result<()>;
+
+    fn get_rom_title(&self) -> Option<String>;
+    fn get_ram_banks(&self) -> Vec<RamBank>;
 }
 
 pub fn read_rom_header(rom: &Vec<u8>) -> Result<Header> {
@@ -62,24 +68,24 @@ pub fn read_rom_header(rom: &Vec<u8>) -> Result<Header> {
     }
 
     let title = &rom[0x0134 ..= 0x0143];
-    let title = read_rom_title(title);
+    let title = decode_rom_title(title);
     let cartridge_type = decode_cartridge_type(rom[0x0147])?;
-    let (rom_size, rom_banks) = get_rom_size(rom[0x0148])?;
-    let (ram_size, ram_banks) = get_ram_size(rom[0x0149])?;
+    let (rom_size, rom_bank_amount) = get_rom_size(rom[0x0148])?;
+    let (ram_size, ram_bank_amount) = get_ram_size(rom[0x0149])?;
 
     Ok(
         Header {
             title,
             cartridge_type,
             rom_size,
-            rom_banks,
+            rom_bank_amount,
             ram_size,
-            ram_banks,
+            ram_bank_amount,
         }
     )
 }
 
-fn read_rom_title(title_buffer: &[u8]) -> Option<String> {
+fn decode_rom_title(title_buffer: &[u8]) -> Option<String> {
     match String::from_utf8(title_buffer.to_vec()) {
         Ok(title) => Some(title),
         Err(_) => None,
@@ -94,29 +100,29 @@ fn decode_cartridge_type(code: u8) -> Result<CartridgeType> {
     }
 }
 
-const fn get_rom_size(code: u8) -> Result<(u32, u16)> {
+const fn get_rom_size(code: u8) -> Result<(usize, usize)> {
     match code {
-        0x00 => Ok((32_000, 2)),      // 32 KByte,  2 banks
-        0x01 => Ok((64_000, 4)),      // 64 KByte,  4 banks
-        0x02 => Ok((128_000, 8)),     // 128 KByte, 8 banks
-        0x03 => Ok((256_000, 16)),    // 256 KByte, 16 banks
-        0x04 => Ok((512_000, 32)),    // 512 KByte, 32 banks
-        0x05 => Ok((1_000_000, 64)),  // 1 MByte,   64 banks
-        0x06 => Ok((2_000_000, 128)), // 2 MByte,   128 banks
-        0x07 => Ok((4_000_000, 256)), // 4 MByte,   256 banks
-        0x08 => Ok((8_000_000, 512)), // 8 MByte,   512 banks
+        0x00 => Ok((32_768, 2)),      // 32 KiB,  2 banks
+        0x01 => Ok((65_536, 4)),      // 64 KiB,  4 banks
+        0x02 => Ok((131_072, 8)),     // 128 KiB, 8 banks
+        0x03 => Ok((262_144, 16)),    // 256 KiB, 16 banks
+        0x04 => Ok((524_288, 32)),    // 512 KiB, 32 banks
+        0x05 => Ok((1_048_576, 64)),  // 1 KiB,   64 banks
+        0x06 => Ok((2_097_152, 128)), // 2 KiB,   128 banks
+        0x07 => Ok((4_194_304, 256)), // 4 KiB,   256 banks
+        0x08 => Ok((8_388_608, 512)), // 8 KiB,   512 banks
         _ => Err(EmulationError::InvalidRomSizeCode { code }),
     }
 }
 
-const fn get_ram_size(code: u8) -> Result<(u32, u16)> {
+const fn get_ram_size(code: u8) -> Result<(usize, usize)> {
     match code {
         0x00 => Ok((0, 0)),        // No RAM
         0x01 => Ok((0, 0)),        // Unused
-        0x02 => Ok((8_000, 1)),    // 8 KB, 1 bank
-        0x03 => Ok((32_000, 4)),   // 32 KB, 4 banks of 8 KB each
-        0x04 => Ok((128_000, 16)), // 128 KB, 16 banks of 8 KB each
-        0x05 => Ok((64_000, 8)),   // 64 KB8 banks of 8 KB each
+        0x02 => Ok((8_192, 1)),    // 8 KiB, 1 bank
+        0x03 => Ok((32_768, 4)),   // 32 KiB, 4 banks of 8 KiB each
+        0x04 => Ok((131_072, 16)), // 128 KiB, 16 banks of 8 KiB each
+        0x05 => Ok((65_536, 8)),   // 64 KiB, 8 banks of 8 KiB each
         _ => Err(EmulationError::InvalidRomSizeCode { code }),
     }
 }

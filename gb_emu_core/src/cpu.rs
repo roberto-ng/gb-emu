@@ -14,15 +14,17 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new() -> Cpu {
-        Cpu {
-            registers: Registers::new(),
-            bus: MemoryBus::new(),
-            pc: 0,
-            sp: 0,
-            cycles: 0,
-            is_halted: false,
-        }
+    pub fn new(rom: Vec<u8>) -> Result<Cpu> {
+        Ok(
+            Cpu {
+                registers: Registers::new(),
+                bus: MemoryBus::new(rom)?,
+                pc: 0,
+                sp: 0,
+                cycles: 0,
+                is_halted: false,
+            }
+        )
     }
 
     pub fn step(&mut self) -> Result<()> {

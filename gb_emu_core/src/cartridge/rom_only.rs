@@ -2,28 +2,39 @@ use crate::cartridge::*;
 use crate::{Result, EmulationError};
 
 pub struct RomOnlyCartridge {
-    rom_bank_0: [u8; ROM_BANK_0_SIZE],
-    rom_bank_n: [u8; ROM_BANK_N_SIZE],
+    rom: Vec<u8>,
+    ram: Option<RamBank>,
+    header: Header,
 }
 
 impl RomOnlyCartridge {
-    pub fn new() -> RomOnlyCartridge {
-        RomOnlyCartridge {
-            rom_bank_0: [0; ROM_BANK_0_SIZE],
-            rom_bank_n: [0; ROM_BANK_N_SIZE],
+    pub fn new(rom: Vec<u8>, header: Header) -> Result<RomOnlyCartridge> {
+        if rom.len() < header.rom_size {
+            return Err(EmulationError::InvalidRom)
         }
+    
+        let has_ram = header.ram_size > 0 && header.ram_bank_amount > 0;
+        let ram = if has_ram {
+            Some([0; 8_192])
+        } else {
+            None
+        };
+
+        Ok(
+            RomOnlyCartridge {
+                rom,
+                ram,
+                header,
+            }
+        )
     }
 }
 
 impl Cartridge for RomOnlyCartridge {
     fn read_byte_rom(&self, address: usize) -> Result<u8> {
         match address {
-            ROM_BANK_0_START ..= ROM_BANK_0_END => {
-                Ok(self.rom_bank_0[address])
-            }
-
-            ROM_BANK_N_START ..= ROM_BANK_N_END => {
-                Ok(self.rom_bank_n[address])
+            ROM_BANK_0_START ..= ROM_BANK_N_END => {
+                Ok(self.rom[address])
             }
 
             _ => {
@@ -37,10 +48,37 @@ impl Cartridge for RomOnlyCartridge {
     }
 
     fn read_byte_external_ram(&self, address: usize) -> Result<u8> {
-        Err(EmulationError::InvalidMemoryRead { address })
+        let pos = address - EXTERNAL_RAM_START;
+        match &self.ram {
+            Some(ram) => Ok(ram[pos]),
+            None => Err(EmulationError::InvalidMemoryRead { address })
+        }
     }
 
     fn write_byte_external_ram(&mut self, address: usize, value: u8) -> Result<()> {
-        Err(EmulationError::InvalidMemoryWrite { address, value })
-    }    
+        let pos = address - EXTERNAL_RAM_START;
+        match &mut self.ram {
+            Some(ram) => {
+                ram[pos] = value;
+                Ok(())
+            },
+            None => Err(EmulationError::InvalidMemoryWrite { address, value })
+        }
+    }
+
+    fn get_rom_title(&self) -> Option<String> {
+        self.header.title.clone()
+    }
+
+    fn get_ram_banks(&self) -> Vec<RamBank> {
+        match &self.ram {
+            Some(ram) => {
+                let mut ram_banks = Vec::with_capacity(1);
+                ram_banks.push(ram.clone());
+                ram_banks
+            }
+
+            None => Vec::new()
+        }
+    }
 }
