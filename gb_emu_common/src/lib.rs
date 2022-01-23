@@ -7,6 +7,8 @@ pub mod cartridge;
 
 use std::fmt;
 
+use cartridge::cartridge_type::CartridgeType;
+
 pub type Result<T> = std::result::Result<T, EmulationError>;
 
 #[derive(Debug)]
@@ -17,6 +19,7 @@ pub enum EmulationError {
     InvalidRomIndex { index: usize, },
     InvalidRom,
     UnknownCartridgeType { code: u8, },
+    UnsupportedCartridgeType { cartridge_type: CartridgeType },
     InvalidRomSizeCode { code: u8, },
     InvalidRamSizeCode { code: u8, },
 }
@@ -61,6 +64,10 @@ impl fmt::Display for EmulationError {
 
             &Self::InvalidRamSizeCode { code } => {
                 write!(f, "This ROM's header informs an invalid RAM size code {:#04X}", code)
+            }
+
+            &Self::UnsupportedCartridgeType { cartridge_type } => {
+                write!(f, "The cartridge type \"{cartridge_type}\" is not supported")
             }
         }
     }

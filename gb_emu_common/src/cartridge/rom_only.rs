@@ -1,5 +1,6 @@
 use crate::cartridge::*;
-use crate::cartridge::header::*;
+use self::header::*;
+use self::cartridge_type::*;
 use crate::{Result, EmulationError};
 
 pub struct RomOnlyCartridge {
@@ -53,7 +54,7 @@ impl Cartridge for RomOnlyCartridge {
         let pos = address - EXTERNAL_RAM_START;
         match &self.ram {
             Some(ram) => Ok(ram[pos]),
-            None => Err(EmulationError::InvalidMemoryRead { address })
+            None => Err(EmulationError::InvalidMemoryRead { address }),
         }
     }
 
@@ -68,13 +69,14 @@ impl Cartridge for RomOnlyCartridge {
         }
     }
 
-    fn get_rom_title(&self) -> Option<String> {
-        self.header.title.clone()
+    fn get_header(&self) -> Header {
+        self.header.clone()
     }
 
     fn get_ram_banks(&self) -> Vec<RamBank> {
         match &self.ram {
             Some(ram) => {
+                // clone the RAM
                 let mut ram_banks = Vec::with_capacity(1);
                 ram_banks.push(ram.clone());
                 ram_banks
@@ -82,5 +84,9 @@ impl Cartridge for RomOnlyCartridge {
 
             None => Vec::new()
         }
+    }
+
+    fn has_battery(&self) -> bool {
+        self.header.cartridge_type == CartridgeType::RomRamBattery
     }
 }

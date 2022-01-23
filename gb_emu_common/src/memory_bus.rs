@@ -1,8 +1,6 @@
 use crate::{EmulationError, Result};
 use crate::gpu::*;
 use crate::cartridge::*;
-use crate::cartridge::rom_only::*;
-use crate::cartridge::header::*;
 
 pub struct MemoryBus {
     gpu: Gpu,
@@ -15,12 +13,12 @@ pub struct MemoryBus {
 
 impl MemoryBus {
     pub fn new(rom: Vec<u8>) -> Result<MemoryBus> {
-        let header = Header::read_rom_header(&rom)?;
+        let cartridge = Box::new(create_cartridge(rom)?);
 
         Ok(
             MemoryBus {
                 gpu: Gpu::new(),
-                cartridge: Box::new(RomOnlyCartridge::new(rom, header)?),
+                cartridge,
                 work_ram_0: [0; WORK_RAM_0_SIZE],
                 work_ram_1: [0; WORK_RAM_N_SIZE],
                 high_ram: [0; HIGH_RAM_SIZE],

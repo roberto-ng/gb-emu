@@ -2,7 +2,10 @@ pub mod rom_only;
 pub mod cartridge_type;
 pub mod header;
 
-use crate::{Result};
+use crate::{Result, EmulationError};
+use self::header::Header;
+use self::cartridge_type::*;
+use self::rom_only::RomOnlyCartridge;
 
 // each RAM bank has KiB of RAM
 type RamBank = [u8; RAM_BANK_SIZE];
@@ -14,8 +17,25 @@ pub trait Cartridge {
     fn read_byte_external_ram(&self, address: usize) -> Result<u8>;
     fn write_byte_external_ram(&mut self, address: usize, value: u8) -> Result<()>;
 
-    fn get_rom_title(&self) -> Option<String>;
+    fn get_header(&self) -> Header;
     fn get_ram_banks(&self) -> Vec<RamBank>;
+    fn has_battery(&self) -> bool;
+}
+
+pub fn create_cartridge(rom: Vec<u8>) -> Result<impl Cartridge> {
+    let header = Header::read_rom_header(&rom)?;
+    match header.cartridge_type {
+        CartridgeType::RomOnly | CartridgeType::RomRam | CartridgeType::RomRamBattery => {
+            RomOnlyCartridge::new(rom, header)
+        }
+
+        _ => {
+            let error = EmulationError::UnsupportedCartridgeType { 
+                cartridge_type: header.cartridge_type 
+            };
+            Err(error)
+        }
+    }
 }
 
 pub const ROM_BANK_SIZE: usize = 16_384;
