@@ -28,11 +28,11 @@ impl fmt::Display for EmulationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Self::InvalidMemoryRead { address } => {
-                write!(f, "Invalid cartridge read on address {:#06X}", address)
+                write!(f, "Invalid cartridge read on address {address:#06X}")
             }
 
             &Self::InvalidMemoryWrite { address, value } => {
-                write!(f, "Invalid write read on address {:#06X} with value {:#06X}", address, value)
+                write!(f, "Invalid write read on address {address:#06X} with value {value:#06X}")
             }
 
             &Self::UnknownOpcode { opcode, is_prefixed } => {
@@ -43,11 +43,11 @@ impl fmt::Display for EmulationError {
                     "not prefixed"
                 };
 
-                write!(f, "Unknown opcode: {:#06X} {}", opcode, prefixed_or_not_text)
+                write!(f, "Unknown opcode: {opcode:#06X} {prefixed_or_not_text}")
             }
 
             &Self::InvalidRomIndex { index } => {
-                write!(f, "ROM has no index {}", index)
+                write!(f, "ROM has no index {index}")
             }
 
             &Self::InvalidRom => {
@@ -55,15 +55,15 @@ impl fmt::Display for EmulationError {
             }
 
             &Self::UnknownCartridgeType { code } => {
-                write!(f, "Unknown cartridge type code with code {:#04X}", code)
+                write!(f, "Unknown cartridge type code with code {code:#04X}")
             }
 
             &Self::InvalidRomSizeCode { code } => {
-                write!(f, "This ROM's header informs an invalid ROM size code {:#04X}", code)
+                write!(f, "This ROM's header informs an invalid ROM size code {code:#04X}")
             }
 
             &Self::InvalidRamSizeCode { code } => {
-                write!(f, "This ROM's header informs an invalid RAM size code {:#04X}", code)
+                write!(f, "This ROM's header informs an invalid RAM size code {code:#04X}")
             }
 
             &Self::UnsupportedCartridgeType { cartridge_type } => {
