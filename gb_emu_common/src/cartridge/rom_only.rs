@@ -11,8 +11,9 @@ pub struct RomOnlyCartridge {
 
 impl RomOnlyCartridge {
     pub fn new(rom: Vec<u8>, header: Header) -> Result<RomOnlyCartridge> {
-        let rom_size = ROM_BANK_SIZE * header.rom_bank_amount;
-        if rom.len() < rom_size {
+        let rom_size = ROM_BANK_SIZE * 2;
+        if rom.len() != rom_size || header.rom_bank_amount != 2 {
+            // this file has an invalid size
             return Err(EmulationError::InvalidRom)
         }
     

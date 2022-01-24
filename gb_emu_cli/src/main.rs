@@ -17,7 +17,9 @@ fn main() {
     let rom_title = header.title
         .unwrap_or(String::from("NO TITLE"));
     let cartridge_type = header.cartridge_type;
+    let file_size = rom.len();
 
     println!("Title: {rom_title}");
     println!("Cartridge type: {cartridge_type}");
+    println!("File size: {file_size} bytes");
 }
