@@ -10,7 +10,7 @@ pub struct Data {
 
 #[derive(Copy, Clone, Debug)]
 pub enum Instruction {
-    ADD(ArithmeticTarget, Data),
+    ADD(R, Data),
     JP(JumpTest, Data),
     LD(LoadType, Data),
     PUSH(StackTarget, Data),
@@ -19,17 +19,6 @@ pub enum Instruction {
     RET(JumpTest, Data),
     NOP(Data),
     Halt(Data),
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum ArithmeticTarget {
-    A,
-    B,
-    C,
-    D,
-    E,
-    H,
-    L,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -135,42 +124,42 @@ impl Instruction {
         match byte {
             0x80 => Some(
                 Instruction::ADD (
-                    ArithmeticTarget::B,
+                    R::B,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x81 => Some(
                 Instruction::ADD (
-                    ArithmeticTarget::C,
+                    R::C,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x82 => Some(
                 Instruction::ADD (
-                    ArithmeticTarget::D,
+                    R::D,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x83 => Some(
                 Instruction::ADD (
-                    ArithmeticTarget::E,
+                    R::E,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x84 => Some(
                 Instruction::ADD (
-                    ArithmeticTarget::H,
+                    R::H,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x85 => Some(
                 Instruction::ADD (
-                    ArithmeticTarget::L,
+                    R::L,
                     Data::new(1, 4, None, byte),
                 )
             ),

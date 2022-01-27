@@ -60,7 +60,7 @@ impl Cpu {
         let result = match instruction {
             Instruction::ADD(target, data) => {
                 let a = self.registers.a;
-                let value = self.get_arithmetic_target(target);
+                let value = self.get_r_value(target); // read register
                 let (new_value, did_overflow) = a.overflowing_add(value);
 
                 // set flags
@@ -226,19 +226,6 @@ impl Cpu {
     }
 
     #[inline(always)]
-    const fn get_arithmetic_target(&self, target: &ArithmeticTarget) -> u8 {
-        match target {
-            ArithmeticTarget::A => self.registers.a,
-            ArithmeticTarget::B => self.registers.b,
-            ArithmeticTarget::C => self.registers.c,
-            ArithmeticTarget::D => self.registers.d,
-            ArithmeticTarget::E => self.registers.e,
-            ArithmeticTarget::H => self.registers.h,
-            ArithmeticTarget::L => self.registers.l,
-        }
-    }
-
-    #[inline(always)]
     fn get_load_byte_source(&mut self, source: &LoadByteSource) -> Result<u8> {
         let byte = match &source {
             LoadByteSource::Register(r) => {
@@ -334,7 +321,33 @@ impl Cpu {
                 self.registers.a = value;
             }
 
-            _ => { panic!("TODO: implement other targets") },
+            R::B => {
+                self.registers.b = value;
+            }
+
+            R::C => {
+                self.registers.c = value;
+            }
+
+            R::D => {
+                self.registers.d = value;
+            }
+
+            R::E => {
+                self.registers.e = value;
+            }
+
+            R::F => {
+                self.registers.f = value.into();
+            }
+
+            R::H => {
+                self.registers.h = value;
+            }
+
+            R::L => {
+                self.registers.l = value;
+            }
         }
     }
 
