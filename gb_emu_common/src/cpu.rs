@@ -79,7 +79,7 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::JP(test, data) => {
+            Instruction::JP(test, _source, data) => {
                 let should_jump = self.perform_jump_test(test);
                 if should_jump {
                     let low_byte = self.bus.read_byte(self.pc + 1)? as u16;
@@ -96,13 +96,13 @@ impl Cpu {
             Instruction::LD(load_type, data) => {
                 match &load_type {
                     LoadType::Byte(target, source) => {
-                        let value = self.get_load_byte_source(source)?;
-                        self.set_load_byte_target(target, value)?;        
+                        let value = self.get_byte_source_value(source)?;
+                        self.set_byte_target_value(target, value)?;        
                     }
 
                     LoadType::Word(target, source) => {
-                        let value = self.get_load_word_source(source)?;
-                        self.set_load_word_target(target, value)?;
+                        let value = self.get_word_source_value(source)?;
+                        self.set_word_target_value(target, value)?;
 
                     }
                 }  
@@ -224,34 +224,34 @@ impl Cpu {
     }
 
     #[inline(always)]
-    fn get_load_byte_source(&mut self, source: &LoadByteSource) -> Result<u8> {
+    fn get_byte_source_value(&mut self, source: &ByteSource) -> Result<u8> {
         let byte = match &source {
-            LoadByteSource::Register(r) => {
+            ByteSource::Register(r) => {
                 self.get_r_value(r)
             }
             
-            LoadByteSource::Immediate8 => {
+            ByteSource::Immediate8 => {
                 self.read_next_byte()?
             }
             
-            LoadByteSource::HL => {
+            ByteSource::HL => {
                 let hl = self.registers.get_hl();
                 self.bus.read_byte(hl)?
             }
             
-            LoadByteSource::HLI => {
+            ByteSource::HLI => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_add(1)); // increment HL
                 self.bus.read_byte(hl)?
             }
             
-            LoadByteSource::HLD => {
+            ByteSource::HLD => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_sub(1)); // decrement HL
                 self.bus.read_byte(hl)?
             }
             
-            LoadByteSource::FF00PlusC => {
+            ByteSource::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
                 self.bus.read_byte(address)?
             }
@@ -261,35 +261,35 @@ impl Cpu {
     }
 
     #[inline(always)]
-    fn set_load_byte_target(&mut self, target: &LoadByteTarget, value: u8) -> Result<()> {
+    fn set_byte_target_value(&mut self, target: &ByteTarget, value: u8) -> Result<()> {
         match target {
-            LoadByteTarget::Register(r) => {
+            ByteTarget::Register(r) => {
                 self.set_r_value(r, value);
             }
 
-            LoadByteTarget::Immediate8 => {
+            ByteTarget::Immediate8 => {
                 let word = self.read_next_word()?;
                 self.bus.write_byte(word, value)?;
             },
 
-            LoadByteTarget::HL => {
+            ByteTarget::HL => {
                 let hl = self.registers.get_hl();
                 self.bus.write_byte(hl, value)?;
             }
             
-            LoadByteTarget::HLI => {
+            ByteTarget::HLI => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_add(1)); // increment HL
                 self.bus.write_byte(hl, value)?;
             }
 
-            LoadByteTarget::HLD => {
+            ByteTarget::HLD => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_sub(1)); // decrement HL
                 self.bus.write_byte(hl, value)?;
             }
 
-            LoadByteTarget::FF00PlusC => {
+            ByteTarget::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
                 self.bus.write_byte(address, value)?;
             }
@@ -299,30 +299,30 @@ impl Cpu {
     }
 
     #[inline(always)]
-    pub fn get_load_word_source(&self, source: &LoadWordSource) -> Result<u16> {
+    pub fn get_word_source_value(&self, source: &WordSource) -> Result<u16> {
         match &source {
-            LoadWordSource::HL => {
+            WordSource::HL => {
                 Ok(self.registers.get_hl())
             }
 
-            LoadWordSource::Immediate16 => {
+            WordSource::Immediate16 => {
                 self.read_next_word()
             }
 
-            LoadWordSource::SP => {
+            WordSource::SP => {
                 Ok(self.sp)
             }
 
-            LoadWordSource::SpPlusI8 => {
+            WordSource::SpPlusI8 => {
                 Ok(self.sp + 8)
             }
         }
     }
 
     #[inline(always)]
-    pub fn set_load_word_target(&mut self, target: &LoadWordTarget, value: u16) -> Result<()> {
+    pub fn set_word_target_value(&mut self, target: &WordTarget, value: u16) -> Result<()> {
         match &target {
-            LoadWordTarget::Direct => {
+            WordTarget::Direct => {
                 let address = self.read_next_word()?;
                 let lsb = (0x00FF & value) as u8;
                 let msb = ((0xFF00 & value) >> 8) as u8;
@@ -331,11 +331,11 @@ impl Cpu {
                 self.bus.write_byte(address + 1, msb)?;
             }
 
-            LoadWordTarget::HL => {
+            WordTarget::HL => {
                 self.registers.set_hl(value);
             }
 
-            LoadWordTarget::SP => {
+            WordTarget::SP => {
                 self.sp = value;
             }
         }
@@ -404,6 +404,7 @@ impl Cpu {
         }
     }
 
+    #[inline(always)]
     pub fn set_rr_value(&mut self, rr: &RR, value: u16) {
         match &rr {
             RR::AF => self.registers.set_af(value),

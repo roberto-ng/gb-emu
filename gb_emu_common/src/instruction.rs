@@ -2,7 +2,7 @@
 pub struct Data {
     pub bytes: u16,
     pub cycles: u8,
-    // The duration of conditional calls and returns is different when action is taken or not
+    // The duration of conditional calls and returns is depending on if the action is taken or not
     pub action_cycles: Option<u8>,
     pub opcode: u8,
     pub is_prefixed: bool,
@@ -11,7 +11,7 @@ pub struct Data {
 #[derive(Copy, Clone, Debug)]
 pub enum Instruction {
     ADD(R, Data),
-    JP(JumpTest, Data),
+    JP(JumpTest, WordSource, Data),
     LD(LoadType, Data),
     PUSH(RR, Data),
     POP(RR, Data),
@@ -53,7 +53,7 @@ pub enum JumpTest {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum LoadByteTarget {
+pub enum ByteTarget {
     Register(R),
     Immediate8,
     HL,
@@ -63,7 +63,7 @@ pub enum LoadByteTarget {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum LoadByteSource {
+pub enum ByteSource {
     Register(R),
     Immediate8,
     HL,
@@ -73,7 +73,7 @@ pub enum LoadByteSource {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum LoadWordSource {
+pub enum WordSource {
     SP,
     Immediate16,
     HL,
@@ -81,7 +81,7 @@ pub enum LoadWordSource {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum LoadWordTarget {
+pub enum WordTarget {
     SP,
     Direct,
     HL,
@@ -89,8 +89,8 @@ pub enum LoadWordTarget {
 
 #[derive(Copy, Clone, Debug)]
 pub enum LoadType {
-    Byte(LoadByteTarget, LoadByteSource),
-    Word(LoadWordTarget, LoadWordSource),
+    Byte(ByteTarget, ByteSource),
+    Word(WordTarget, WordSource),
 }
 
 
@@ -137,89 +137,100 @@ impl Instruction {
     const fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
         match byte {
             0x80 => Some(
-                Instruction::ADD (
+                Instruction::ADD(
                     R::B,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x81 => Some(
-                Instruction::ADD (
+                Instruction::ADD(
                     R::C,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x82 => Some(
-                Instruction::ADD (
+                Instruction::ADD(
                     R::D,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x83 => Some(
-                Instruction::ADD (
+                Instruction::ADD(
                     R::E,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x84 => Some(
-                Instruction::ADD (
+                Instruction::ADD(
                     R::H,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x85 => Some(
-                Instruction::ADD (
+                Instruction::ADD(
                     R::L,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
+            // JP nz, u16
             0xC2 => Some(
-                Instruction::JP (
+                Instruction::JP(
                     JumpTest::NotZero,
+                    WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
             
+            // JP n16
             0xC3 => Some(
-                Instruction::JP (
+                Instruction::JP(
                     JumpTest::Always,
+                    WordSource::Immediate16,
                     Data::new(3, 16, None, byte),
                 )
             ),
             
+            // JP z, n16
             0xCA => Some(
-                Instruction::JP (
+                Instruction::JP(
                     JumpTest::Zero,
+                    WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
 
+            // JP nc, n16
             0xD2 => Some(
-                Instruction::JP (
+                Instruction::JP(
                     JumpTest::NotCarry,
+                    WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
 
+            // JP cc, n16
             0xDA => Some(
-                Instruction::JP (
+                Instruction::JP(
                     JumpTest::Carry,
+                    WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
                 )
             ),
 
-            /*
-            0xE9 => Some(Instruction::JP {
-                test: JumpTest::Always,
-                source: //to hl?,
-                info: InstructionInfo::new(1, 4, None),
-            }),
-            */
+            // JP HL
+            0xE9 => Some(
+                Instruction::JP(
+                    JumpTest::Always,
+                    WordSource::HL,
+                    Data::new(1,4, None, byte),
+                )
+            ),
 
             _ => None,
         }
