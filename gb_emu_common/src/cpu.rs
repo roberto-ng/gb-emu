@@ -94,17 +94,21 @@ impl Cpu {
             }
             
             Instruction::LD(load_type, data) => {
-                match load_type {
+                match &load_type {
                     LoadType::Byte(target, source) => {
                         let value = self.get_load_byte_source(source)?;
-                        self.set_load_byte_target(target, value)?;
-        
-                        let next_pc = self.pc.wrapping_add(data.bytes);
-                        (next_pc, data.cycles)
+                        self.set_load_byte_target(target, value)?;        
                     }
 
-                    // implement other load types
+                    LoadType::Word(target, source) => {
+                        let value = self.get_load_word_source(source)?;
+                        self.set_load_word_target(target, value)?;
+
+                    }
                 }  
+                
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
             }
 
             Instruction::PUSH(target, data) => {
@@ -253,7 +257,7 @@ impl Cpu {
                 self.bus.read_byte(hl)?
             }
             
-            LoadByteSource::IndexedC => {
+            LoadByteSource::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
                 self.bus.read_byte(address)?
             }
@@ -291,9 +295,54 @@ impl Cpu {
                 self.bus.write_byte(hl, value)?;
             }
 
-            LoadByteTarget::IndexedC => {
+            LoadByteTarget::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
                 self.bus.write_byte(address, value)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn get_load_word_source(&self, source: &LoadWordSource) -> Result<u16> {
+        match &source {
+            LoadWordSource::HL => {
+                Ok(self.registers.get_hl())
+            }
+
+            LoadWordSource::Immediate16 => {
+                self.read_next_word()
+            }
+
+            LoadWordSource::SP => {
+                Ok(self.sp)
+            }
+
+            LoadWordSource::SpPlusI8 => {
+                Ok(self.sp + 8)
+            }
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_load_word_target(&mut self, target: &LoadWordTarget, value: u16) -> Result<()> {
+        match &target {
+            LoadWordTarget::Direct => {
+                let address = self.read_next_word()?;
+                let lsb = (0x00FF & value) as u8;
+                let msb = ((0xFF00 & value) >> 8) as u8;
+                
+                self.bus.write_byte(address, lsb)?;
+                self.bus.write_byte(address + 1, msb)?;
+            }
+
+            LoadWordTarget::HL => {
+                self.registers.set_hl(value);
+            }
+
+            LoadWordTarget::SP => {
+                self.sp = value;
             }
         }
 

@@ -22,35 +22,6 @@ pub enum Instruction {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum JumpTest {
-    NotZero,
-    Zero,
-    NotCarry,
-    Carry,
-    Always,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum LoadByteTarget {
-    Register(R),
-    Immediate8,
-    HL,
-    HLI,
-    HLD,
-    IndexedC,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum LoadByteSource {
-    Register(R),
-    Immediate8,
-    HL,
-    HLI,
-    HLD,
-    IndexedC,
-}
-
-#[derive(Copy, Clone, Debug)]
 pub enum R {
     A,
     B,
@@ -71,8 +42,53 @@ pub enum RR {
 }
 
 #[derive(Copy, Clone, Debug)]
+pub enum JumpTest {
+    NotZero,
+    Zero,
+    NotCarry,
+    Carry,
+    Always,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum LoadByteTarget {
+    Register(R),
+    Immediate8,
+    HL,
+    HLI,
+    HLD,
+    FF00PlusC,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum LoadByteSource {
+    Register(R),
+    Immediate8,
+    HL,
+    HLI,
+    HLD,
+    FF00PlusC,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum LoadWordSource {
+    SP,
+    Immediate16,
+    HL,
+    SpPlusI8,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum LoadWordTarget {
+    SP,
+    Direct,
+    HL,
+}
+
+#[derive(Copy, Clone, Debug)]
 pub enum LoadType {
     Byte(LoadByteTarget, LoadByteSource),
+    Word(LoadWordTarget, LoadWordSource),
 }
 
 #[derive(Copy, Clone, Debug)]
