@@ -97,19 +97,7 @@ impl Cpu {
                 match load_type {
                     LoadType::Byte(target, source) => {
                         let value = self.get_load_byte_source(source)?;
-        
-                        match target {
-                            LoadByteTarget::A => {
-                                self.registers.a = value;
-                            }
-                            
-                            LoadByteTarget::HLI => {
-                                let address = self.registers.get_hl();
-                                self.bus.write_byte(address, value)?;
-                            }
-
-                            _ => { panic!("TODO: implement other sources") },
-                        }
+                        self.set_load_byte_target(target, value)?;
         
                         let next_pc = self.pc.wrapping_add(data.bytes);
                         (next_pc, data.cycles)
@@ -251,15 +239,103 @@ impl Cpu {
     }
 
     #[inline(always)]
-    fn get_load_byte_source(&self, source: &LoadByteSource) -> Result<u8> {
-        let byte = match source {
-            LoadByteSource::A => self.registers.a,
-            LoadByteSource::D8 => self.read_next_byte()?,
-            LoadByteSource::HLI => self.bus.read_byte(self.registers.get_hl())?,
-            _ => { panic!("TODO: implement other sources") },
+    fn get_load_byte_source(&mut self, source: &LoadByteSource) -> Result<u8> {
+        let byte = match &source {
+            LoadByteSource::Register(r) => {
+                self.get_r_value(r)
+            }
+            
+            LoadByteSource::Immediate8 => {
+                self.read_next_byte()?
+            }
+            
+            LoadByteSource::HL => {
+                let hl = self.registers.get_hl();
+                self.bus.read_byte(hl)?
+            }
+            
+            LoadByteSource::HLI => {
+                let hl = self.registers.get_hl();
+                self.registers.set_hl(hl.wrapping_add(1)); // increment HL
+                self.bus.read_byte(hl)?
+            }
+            
+            LoadByteSource::HLD => {
+                let hl = self.registers.get_hl();
+                self.registers.set_hl(hl.wrapping_sub(1)); // decrement HL
+                self.bus.read_byte(hl)?
+            }
+            
+            LoadByteSource::IndexedC => {
+                let address = 0xFF00 + (self.registers.c as u16);
+                self.bus.read_byte(address)?
+            }
         };
 
         Ok(byte)
+    }
+
+    #[inline(always)]
+    fn set_load_byte_target(&mut self, target: &LoadByteTarget, value: u8) -> Result<()> {
+        match target {
+            LoadByteTarget::Register(r) => {
+                self.set_r_value(r, value);
+            }
+
+            LoadByteTarget::Immediate8 => {
+                let word = self.read_next_word()?;
+                self.bus.write_byte(word, value)?;
+            },
+
+            LoadByteTarget::HL => {
+                let hl = self.registers.get_hl();
+                self.bus.write_byte(hl, value)?;
+            }
+            
+            LoadByteTarget::HLI => {
+                let hl = self.registers.get_hl();
+                self.registers.set_hl(hl.wrapping_add(1)); // increment HL
+                self.bus.write_byte(hl, value)?;
+            }
+
+            LoadByteTarget::HLD => {
+                let hl = self.registers.get_hl();
+                self.registers.set_hl(hl.wrapping_sub(1)); // decrement HL
+                self.bus.write_byte(hl, value)?;
+            }
+
+            LoadByteTarget::IndexedC => {
+                let address = 0xFF00 + (self.registers.c as u16);
+                self.bus.write_byte(address, value)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    #[inline(always)]
+    pub fn get_r_value(&self, r: &R) -> u8 {
+        match r {
+            R::A => self.registers.a,
+            R::B => self.registers.b,
+            R::C => self.registers.c,
+            R::D => self.registers.d,
+            R::E => self.registers.e,
+            R::F => self.registers.f.into(),
+            R::H => self.registers.h,
+            R::L => self.registers.l,
+        }
+    }
+
+    #[inline(always)]
+    pub fn set_r_value(&mut self, r: &R, value: u8) {
+        match r {
+            R::A => {
+                self.registers.a = value;
+            }
+
+            _ => { panic!("TODO: implement other targets") },
+        }
     }
 
     #[inline(always)]

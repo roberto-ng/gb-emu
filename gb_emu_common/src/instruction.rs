@@ -42,21 +42,48 @@ pub enum JumpTest {
 }
 
 #[derive(Copy, Clone, Debug)]
-
 pub enum LoadByteTarget {
-    A, B, C, D, E, H, L, HLI,
+    Register(R),
+    Immediate8,
+    HL,
+    HLI,
+    HLD,
+    IndexedC,
 }
 
 #[derive(Copy, Clone, Debug)]
-
 pub enum LoadByteSource {
-    A, B, C, D, E, H, L, D8, HLI,
+    Register(R),
+    Immediate8,
+    HL,
+    HLI,
+    HLD,
+    IndexedC,
 }
 
 #[derive(Copy, Clone, Debug)]
+pub enum R {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    H,
+    L,
+}
 
+#[derive(Copy, Clone, Debug)]
+pub enum RR {
+    AF,
+    BC,
+    DE,
+    HL,
+}
+
+#[derive(Copy, Clone, Debug)]
 pub enum LoadType {
-    Byte(LoadByteTarget, LoadByteSource)
+    Byte(LoadByteTarget, LoadByteSource),
 }
 
 #[derive(Copy, Clone, Debug)]
