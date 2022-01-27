@@ -13,14 +13,15 @@ pub enum Instruction {
     ADD(R, Data),
     JP(JumpTest, Data),
     LD(LoadType, Data),
-    PUSH(StackTarget, Data),
-    POP(StackTarget, Data),
+    PUSH(RR, Data),
+    POP(RR, Data),
     CALL(JumpTest, Data),
     RET(JumpTest, Data),
     NOP(Data),
     Halt(Data),
 }
 
+// 8-bit registers
 #[derive(Copy, Clone, Debug)]
 pub enum R {
     A,
@@ -33,6 +34,7 @@ pub enum R {
     L,
 }
 
+// 16-bit registers
 #[derive(Copy, Clone, Debug)]
 pub enum RR {
     AF,
@@ -91,10 +93,6 @@ pub enum LoadType {
     Word(LoadWordTarget, LoadWordSource),
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum StackTarget {
-    BC,
-}
 
 impl Data {
     pub const fn new(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {

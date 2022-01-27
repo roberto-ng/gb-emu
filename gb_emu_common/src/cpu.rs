@@ -112,11 +112,7 @@ impl Cpu {
             }
 
             Instruction::PUSH(target, data) => {
-                let value = match target {
-                    StackTarget::BC => self.registers.get_bc(),
-                    // TODO: support more targets
-                };
-
+                let value =  self.get_rr_value(target);
                 self.push(value)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
@@ -125,9 +121,7 @@ impl Cpu {
             
             Instruction::POP(target, data) => {
                 let result = self.pop()?;
-                match target {
-                    StackTarget::BC => self.registers.set_bc(result),
-                };
+                self.set_rr_value(target, result);
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
@@ -398,6 +392,25 @@ impl Cpu {
                 self.registers.l = value;
             }
         }
+    }
+
+    #[inline(always)]
+    pub fn get_rr_value(&self, rr: &RR) -> u16 {
+        match &rr {
+            RR::AF => self.registers.get_af(),
+            RR::BC => self.registers.get_bc(),
+            RR::DE => self.registers.get_de(),
+            RR::HL => self.registers.get_hl(),
+        }
+    }
+
+    pub fn set_rr_value(&mut self, rr: &RR, value: u16) {
+        match &rr {
+            RR::AF => self.registers.set_af(value),
+            RR::BC => self.registers.set_bc(value),
+            RR::DE => self.registers.set_de(value),
+            RR::HL => self.registers.set_hl(value),
+        };
     }
 
     #[inline(always)]
