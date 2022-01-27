@@ -314,7 +314,7 @@ impl Cpu {
             }
 
             WordSource::SpPlusI8 => {
-                Ok(self.sp + 8)
+                Ok(self.sp.wrapping_add(8))
             }
         }
     }
