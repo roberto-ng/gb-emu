@@ -1,0 +1,12 @@
+[package]
+name = "gb_emu_desktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gb_emu_common = { version = "*", path = "../gb_emu_common" }
+macroquad = { version = "0.3.6", default-features = false }
+egui-macroquad = "0.8.0"
+egui = "0.16.0"
+native-dialog = "0.6.3"
+directories = "4.0.1"
