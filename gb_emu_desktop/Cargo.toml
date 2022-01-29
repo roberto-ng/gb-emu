@@ -8,5 +8,5 @@ gb_emu_common = { version = "*", path = "../gb_emu_common" }
 macroquad = { version = "0.3.6", default-features = false }
 egui-macroquad = "0.8.0"
 egui = "0.16.0"
-native-dialog = "0.6.3"
+native-dialog = "0.6.3" # this depends on Zenity on linux
 directories = "4.0.1"
