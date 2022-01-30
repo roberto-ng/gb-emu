@@ -1,12 +1,13 @@
+use std::cell::RefCell;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::rc::Rc;
+use std::fs;
 use directories::UserDirs;
+use directories::BaseDirs;
 use gb_emu_common::cartridge::header::Header;
 use macroquad::prelude::*;
 use native_dialog::FileDialog;
-use std::{
-    cell::RefCell,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
 
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
@@ -26,10 +27,25 @@ async fn main() {
     let mut is_fullscreen = false;
 
     let rom_data_description: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
+    let last_folder: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(read_config().expect("Could not open config")));
 
     let handle_open_file_btn_click = || {
-        let rom_path = open_file().expect("Could not read file");
+        let last_folder_path = last_folder.borrow().clone().map(|last_folder| PathBuf::from(last_folder));
+        let rom_path = open_file(&last_folder_path).expect("Could not read file");
+        
         if let Some(rom_path) = rom_path {
+            if let Some(last_folder_path) = last_folder_path {
+                let mut current_folder = PathBuf::from(&rom_path);
+                current_folder.pop(); // remove file name from path
+
+                if last_folder_path != current_folder {
+                    if let Some(current_folder) = current_folder.to_str() {
+                        save_config(current_folder).expect("Error saving config");
+                        last_folder.replace(Some(String::from(current_folder)));
+                    }
+                }
+            }
+
             let rom = std::fs::read(&rom_path).expect("Could not read file");
             let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
             let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
@@ -134,14 +150,15 @@ fn scale_image(src_width: f32, src_height: f32, max_width: f32, max_height: f32)
     }
 }
 
-fn open_file() -> Result<Option<String>, native_dialog::Error> {
+fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dialog::Error> {
     let home_path = match UserDirs::new() {
         Some(user_dirs) => user_dirs.home_dir().to_owned(),
         None => PathBuf::from(""),
     };
 
+    let start_path = last_folder.to_owned().unwrap_or(home_path.to_owned()); 
     let path = FileDialog::new()
-        .set_location(&home_path)
+        .set_location(&start_path)
         .add_filter("GB ROM", &["gb"])
         .add_filter("All files", &["*"])
         .show_open_single_file()?
@@ -152,4 +169,43 @@ fn open_file() -> Result<Option<String>, native_dialog::Error> {
         });
 
     Ok(path)
+}
+
+fn save_config(content: &str) -> std::io::Result<()> {
+    if let Some(dirs) = BaseDirs::new() {
+        let config_path = dirs.config_dir();
+        let app_config_path = config_path.join("rustboy");
+        let config_file_path = app_config_path.join("last_folder.txt");
+        fs::create_dir_all(&app_config_path)?; // create dir if it not exists
+
+        let mut file = fs::File::create(&config_file_path)?;
+        write!(&mut file, "{content}")?;
+    } else {
+        panic!("Could not find base dirs");
+    }
+
+    Ok(())
+}
+
+fn read_config() -> std::io::Result<Option<String>> {
+    if let Some(dirs) = BaseDirs::new() {
+        let config_path = dirs.config_dir();
+        let app_config_path = config_path.join("rustboy");
+        let config_file_path = app_config_path.join("last_folder.txt");
+        //fs::create_dir_all(&app_config_path)?; // create dir if it not exists
+        
+        if config_file_path.exists() {
+            let content = fs::read_to_string(&config_file_path)?;
+            // check if path exists
+            if Path::new(&content).exists() {
+                Ok(Some(content))
+            } else {
+                Ok(None)
+            }
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
 }
