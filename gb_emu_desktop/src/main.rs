@@ -1,13 +1,13 @@
-use std::cell::RefCell;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::rc::Rc;
-use std::fs;
+mod config;
+
+use config::*;
 use directories::UserDirs;
-use directories::BaseDirs;
 use gb_emu_common::cartridge::header::Header;
 use macroquad::prelude::*;
 use native_dialog::FileDialog;
+use std::cell::RefCell;
+use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
@@ -27,22 +27,32 @@ async fn main() {
     let mut is_fullscreen = false;
 
     let rom_data_description: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
-    let last_folder: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(read_config().expect("Could not open config")));
+    let last_folder: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(
+        read_config(&ConfigFile::LastUsedDirectory).expect("Could not open config"),
+    ));
 
     let handle_open_file_btn_click = || {
-        let last_folder_path = last_folder.borrow().clone().map(|last_folder| PathBuf::from(last_folder));
+        let last_folder_path = last_folder
+            .borrow()
+            .clone()
+            .map(|last_folder| PathBuf::from(last_folder));
         let rom_path = open_file(&last_folder_path).expect("Could not read file");
-        
-        if let Some(rom_path) = rom_path {
-            if let Some(last_folder_path) = last_folder_path {
-                let mut current_folder = PathBuf::from(&rom_path);
-                current_folder.pop(); // remove file name from path
 
+        if let Some(rom_path) = rom_path {
+            let mut current_folder = PathBuf::from(&rom_path);
+            current_folder.pop(); // remove file name from path
+            
+            if let Some(last_folder_path) = last_folder_path {
                 if last_folder_path != current_folder {
                     if let Some(current_folder) = current_folder.to_str() {
-                        save_config(current_folder).expect("Error saving config");
+                        save_config(&ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
                         last_folder.replace(Some(String::from(current_folder)));
                     }
+                }
+            } else {
+                if let Some(current_folder) = current_folder.to_str() {
+                    save_config(&ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                    last_folder.replace(Some(String::from(current_folder)));
                 }
             }
 
@@ -60,7 +70,7 @@ async fn main() {
                 "Title: {rom_title}\n\
                 File name: {file_name}\n\
                 Cartridge type: {cartridge_type}\n\
-                File size: {file_size} bytes\n\
+                File size: {file_size} bytes\
                 "
             );
             rom_data_description.replace(Some(description));
@@ -156,7 +166,7 @@ fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dia
         None => PathBuf::from(""),
     };
 
-    let start_path = last_folder.to_owned().unwrap_or(home_path.to_owned()); 
+    let start_path = last_folder.to_owned().unwrap_or(home_path.to_owned());
     let path = FileDialog::new()
         .set_location(&start_path)
         .add_filter("GB ROM", &["gb"])
@@ -169,43 +179,4 @@ fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dia
         });
 
     Ok(path)
-}
-
-fn save_config(content: &str) -> std::io::Result<()> {
-    if let Some(dirs) = BaseDirs::new() {
-        let config_path = dirs.config_dir();
-        let app_config_path = config_path.join("rustboy");
-        let config_file_path = app_config_path.join("last_folder.txt");
-        fs::create_dir_all(&app_config_path)?; // create dir if it not exists
-
-        let mut file = fs::File::create(&config_file_path)?;
-        write!(&mut file, "{content}")?;
-    } else {
-        panic!("Could not find base dirs");
-    }
-
-    Ok(())
-}
-
-fn read_config() -> std::io::Result<Option<String>> {
-    if let Some(dirs) = BaseDirs::new() {
-        let config_path = dirs.config_dir();
-        let app_config_path = config_path.join("rustboy");
-        let config_file_path = app_config_path.join("last_folder.txt");
-        //fs::create_dir_all(&app_config_path)?; // create dir if it not exists
-        
-        if config_file_path.exists() {
-            let content = fs::read_to_string(&config_file_path)?;
-            // check if path exists
-            if Path::new(&content).exists() {
-                Ok(Some(content))
-            } else {
-                Ok(None)
-            }
-        } else {
-            Ok(None)
-        }
-    } else {
-        Ok(None)
-    }
 }
