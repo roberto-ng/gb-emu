@@ -5,13 +5,32 @@ use directories::UserDirs;
 use gb_emu_common::cartridge::header::Header;
 use macroquad::prelude::*;
 use native_dialog::FileDialog;
-use std::cell::RefCell;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
 
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
 const MENU_BAR_HEIGHT: f32 = 23.;
+
+struct State {
+    pub quit: bool,
+    pub show_menu_bar: bool,
+    pub show_rom_info_window: bool,
+    pub rom_info_description: Option<String>,
+    pub last_used_dir: Option<String>,
+}
+
+impl State {
+    pub fn new() -> State {
+        let last_used_dir = read_config(ConfigFile::LastUsedDirectory).unwrap_or(None);
+        State {
+            quit: false,
+            show_menu_bar: true,
+            show_rom_info_window: false,
+            rom_info_description: None,
+            last_used_dir,
+        }
+    }
+}
 
 fn conf() -> Conf {
     Conf {
@@ -23,91 +42,33 @@ fn conf() -> Conf {
 
 #[macroquad::main(conf)]
 async fn main() {
-    let mut quit = false;
-    let mut is_fullscreen = false;
-    let mut show_rom_info_window = false;
-
-    let rom_data_description: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
-    let last_folder: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(
-        read_config(ConfigFile::LastUsedDirectory).expect("Could not open config"),
-    ));
-
-    let handle_open_file_btn_click = || {
-        let last_folder_path = last_folder
-            .borrow()
-            .clone()
-            .map(|last_folder| PathBuf::from(last_folder));
-        let rom_path = open_file(&last_folder_path).expect("Could not read file");
-
-        if let Some(rom_path) = rom_path {
-            let mut current_folder = PathBuf::from(&rom_path);
-            current_folder.pop(); // remove file name from path
-            
-            if let Some(last_folder_path) = last_folder_path {
-                if last_folder_path != current_folder {
-                    if let Some(current_folder) = current_folder.to_str() {
-                        save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
-                        last_folder.replace(Some(String::from(current_folder)));
-                    }
-                }
-            } else {
-                if let Some(current_folder) = current_folder.to_str() {
-                    save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
-                    last_folder.replace(Some(String::from(current_folder)));
-                }
-            }
-
-            let rom = std::fs::read(&rom_path).expect("Could not read file");
-            let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
-            let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
-            let file_name: &str = Path::new(&rom_path)
-                .file_name()
-                .map(|file_name| file_name.to_str())
-                .flatten()
-                .unwrap_or(&rom_path);
-            let cartridge_type = header.cartridge_type;
-            let file_size = rom.len();
-            let description = format!(
-                "Title: {rom_title}\n\
-                File name: {file_name}\n\
-                Cartridge type: {cartridge_type}\n\
-                File size: {file_size} bytes\
-                "
-            );
-            rom_data_description.replace(Some(description));
-        }
-    };
+    let mut state = State::new();
 
     loop {
         clear_background(BLACK);
 
-        if quit {
+        if state.quit {
             break;
         }
 
         // process keys, mouse etc.
 
         if is_key_pressed(KeyCode::F11) {
-            is_fullscreen = !is_fullscreen;
+            state.show_menu_bar = !state.show_menu_bar;
         }
 
         egui_macroquad::ui(|ctx| {
-            if !is_fullscreen {
+            if state.show_menu_bar {
                 egui::TopBottomPanel::top("top_panel").show(&ctx, |ui| {
                     egui::menu::bar(ui, |ui| {
                         ui.menu_button("File", |ui| {
                             if ui.button("Open").clicked() {
                                 ui.close_menu();
-                                handle_open_file_btn_click();
-                                
-                                // show ROM information window if file was opened
-                                if let Some(_) = rom_data_description.borrow().as_ref() {
-                                    show_rom_info_window = true;
-                                } 
+                                handle_open_file_btn_click(&mut state);
                             }
 
                             if ui.button("Quit").clicked() {
-                                quit = true;
+                                state.quit = true;
                                 ui.close_menu();
                             }
                         });
@@ -115,9 +76,9 @@ async fn main() {
                 });
             }
 
-            if let Some(description) = rom_data_description.borrow().as_ref() {
+            if let Some(description) = &state.rom_info_description {
                 egui::Window::new("ROM info")
-                    .open(&mut show_rom_info_window)
+                    .open(&mut state.show_rom_info_window)
                     .show(&ctx, |ui| {
                         ui.label(description);
                     });
@@ -127,7 +88,7 @@ async fn main() {
         // draw things before egui
 
         let menu_bar_end = MENU_BAR_HEIGHT + 1.0;
-        let screen_height = if is_fullscreen {
+        let screen_height = if state.show_menu_bar {
             screen_height()
         } else {
             screen_height() - menu_bar_end
@@ -142,7 +103,7 @@ async fn main() {
         );
         let x = (screen_width - w) / 2.0;
         let y = (screen_height - h) / 2.0;
-        let offset_y = if is_fullscreen { 0.0 } else { menu_bar_end };
+        let offset_y = if state.show_menu_bar { 0.0 } else { menu_bar_end };
         // draw gb screen
         draw_rectangle(x, y + offset_y, w, h, WHITE);
 
@@ -150,6 +111,52 @@ async fn main() {
         egui_macroquad::draw();
 
         next_frame().await;
+    }
+}
+
+fn handle_open_file_btn_click(state: &mut State) {
+    let last_folder_path = state.last_used_dir
+        .clone()
+        .map(|last_folder| PathBuf::from(last_folder));
+    let rom_path = open_file(&last_folder_path).expect("Could not read file");
+
+    if let Some(rom_path) = rom_path {
+        let mut current_folder = PathBuf::from(&rom_path);
+        current_folder.pop(); // remove file name from path
+        
+        if let Some(last_folder_path) = last_folder_path {
+            if last_folder_path != current_folder {
+                if let Some(current_folder) = current_folder.to_str() {
+                    save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                    state.last_used_dir = Some(String::from(current_folder));
+                }
+            }
+        } else {
+            if let Some(current_folder) = current_folder.to_str() {
+                save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                state.last_used_dir = Some(String::from(current_folder));
+            }
+        }
+
+        let rom = std::fs::read(&rom_path).expect("Could not read file");
+        let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
+        let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
+        let file_name: &str = Path::new(&rom_path)
+            .file_name()
+            .map(|file_name| file_name.to_str())
+            .flatten()
+            .unwrap_or(&rom_path);
+        let cartridge_type = header.cartridge_type;
+        let file_size = rom.len();
+        let description = format!(
+            "Title: {rom_title}\n\
+            File name: {file_name}\n\
+            Cartridge type: {cartridge_type}\n\
+            File size: {file_size} bytes\
+            "
+        );
+        state.rom_info_description = Some(description);
+        state.show_rom_info_window = true // Show ROM information window
     }
 }
 
@@ -183,7 +190,7 @@ fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dia
         .map(|path| {
             path.into_os_string()
                 .into_string()
-                .expect("Erro ao converter")
+                .expect("Error converting OsString to String")
         });
 
     Ok(path)
