@@ -103,7 +103,11 @@ async fn main() {
         );
         let x = (screen_width - w) / 2.0;
         let y = (screen_height - h) / 2.0;
-        let offset_y = if state.show_menu_bar { 0.0 } else { menu_bar_end };
+        let offset_y = if state.show_menu_bar {
+            0.0
+        } else {
+            menu_bar_end
+        };
         // draw gb screen
         draw_rectangle(x, y + offset_y, w, h, WHITE);
 
@@ -115,7 +119,8 @@ async fn main() {
 }
 
 fn handle_open_file_btn_click(state: &mut State) {
-    let last_folder_path = state.last_used_dir
+    let last_folder_path = state
+        .last_used_dir
         .clone()
         .map(|last_folder| PathBuf::from(last_folder));
     let rom_path = open_file(&last_folder_path).expect("Could not read file");
@@ -123,17 +128,19 @@ fn handle_open_file_btn_click(state: &mut State) {
     if let Some(rom_path) = rom_path {
         let mut current_folder = PathBuf::from(&rom_path);
         current_folder.pop(); // remove file name from path
-        
+
         if let Some(last_folder_path) = last_folder_path {
             if last_folder_path != current_folder {
                 if let Some(current_folder) = current_folder.to_str() {
-                    save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                    save_config(ConfigFile::LastUsedDirectory, current_folder)
+                        .expect("Error saving config");
                     state.last_used_dir = Some(String::from(current_folder));
                 }
             }
         } else {
             if let Some(current_folder) = current_folder.to_str() {
-                save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                save_config(ConfigFile::LastUsedDirectory, current_folder)
+                    .expect("Error saving config");
                 state.last_used_dir = Some(String::from(current_folder));
             }
         }
