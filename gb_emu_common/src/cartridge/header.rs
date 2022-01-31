@@ -16,8 +16,17 @@ impl Header {
         if rom.len() < 0x014F {
             return Err(EmulationError::InvalidRom)
         }
+        
+        // check if this is a CGB (gameboy color) ROM
+        let cgb_flag = rom[0x143];
+        let is_cgb = cgb_flag == 0x80 || cgb_flag == 0xC0;
     
-        let title = &rom[0x0134 ..= 0x0143];
+        // the title size is different on CGB
+        let title = if is_cgb {
+            &rom[0x0134 ..= 0x013E]
+        } else {
+            &rom[0x0134 ..= 0x0143]
+        };
         let title = decode_rom_title(title);
         let cartridge_type = decode_cartridge_type(rom[0x0147])?;
         let rom_bank_amount = get_amount_of_rom_banks(rom[0x0148])?;

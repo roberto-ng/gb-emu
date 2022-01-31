@@ -57,7 +57,7 @@ impl Cpu {
             return Ok((self.pc, 0));
         }
 
-        let result = match instruction {
+        let result = match &instruction {
             Instruction::ADD(target, data) => {
                 let a = self.registers.a;
                 let value = self.get_r_value(target); // read register
@@ -152,7 +152,7 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::Halt(data) => {
+            Instruction::HALT(data) => {
                 self.is_halted = true;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);

@@ -25,10 +25,11 @@ fn conf() -> Conf {
 async fn main() {
     let mut quit = false;
     let mut is_fullscreen = false;
+    let mut show_rom_info_window = false;
 
     let rom_data_description: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
     let last_folder: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(
-        read_config(&ConfigFile::LastUsedDirectory).expect("Could not open config"),
+        read_config(ConfigFile::LastUsedDirectory).expect("Could not open config"),
     ));
 
     let handle_open_file_btn_click = || {
@@ -45,13 +46,13 @@ async fn main() {
             if let Some(last_folder_path) = last_folder_path {
                 if last_folder_path != current_folder {
                     if let Some(current_folder) = current_folder.to_str() {
-                        save_config(&ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                        save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
                         last_folder.replace(Some(String::from(current_folder)));
                     }
                 }
             } else {
                 if let Some(current_folder) = current_folder.to_str() {
-                    save_config(&ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
+                    save_config(ConfigFile::LastUsedDirectory, current_folder).expect("Error saving config");
                     last_folder.replace(Some(String::from(current_folder)));
                 }
             }
@@ -98,6 +99,11 @@ async fn main() {
                             if ui.button("Open").clicked() {
                                 ui.close_menu();
                                 handle_open_file_btn_click();
+                                
+                                // show ROM information window if file was opened
+                                if let Some(_) = rom_data_description.borrow().as_ref() {
+                                    show_rom_info_window = true;
+                                } 
                             }
 
                             if ui.button("Quit").clicked() {
@@ -110,9 +116,11 @@ async fn main() {
             }
 
             if let Some(description) = rom_data_description.borrow().as_ref() {
-                egui::Window::new("ROM data").show(&ctx, |ui| {
-                    ui.label(description);
-                });
+                egui::Window::new("ROM info")
+                    .open(&mut show_rom_info_window)
+                    .show(&ctx, |ui| {
+                        ui.label(description);
+                    });
             }
         });
 
@@ -169,7 +177,7 @@ fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dia
     let start_path = last_folder.to_owned().unwrap_or(home_path.to_owned());
     let path = FileDialog::new()
         .set_location(&start_path)
-        .add_filter("GB ROM", &["gb"])
+        .add_filter("GB/GBC ROM", &["gb", "gbc"])
         .add_filter("All files", &["*"])
         .show_open_single_file()?
         .map(|path| {

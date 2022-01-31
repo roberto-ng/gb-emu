@@ -18,7 +18,7 @@ pub enum Instruction {
     CALL(JumpTest, Data),
     RET(JumpTest, Data),
     NOP(Data),
-    Halt(Data),
+    HALT(Data),
 }
 
 // 8-bit registers

@@ -15,7 +15,7 @@ impl ConfigFile {
     }
 }
 
-pub fn save_config(config_file: &ConfigFile, content: &str) -> std::io::Result<()> {
+pub fn save_config(config_file: ConfigFile, content: &str) -> std::io::Result<()> {
     if let Some(dirs) = BaseDirs::new() {
         let config_path = dirs.config_dir();
         let app_config_path = config_path.join("rustboy");
@@ -33,7 +33,7 @@ pub fn save_config(config_file: &ConfigFile, content: &str) -> std::io::Result<(
     Ok(())
 }
 
-pub fn read_config(config_file: &ConfigFile) -> std::io::Result<Option<String>> {
+pub fn read_config(config_file: ConfigFile) -> std::io::Result<Option<String>> {
     if let Some(dirs) = BaseDirs::new() {
         let config_path = dirs.config_dir();
         let app_config_path = config_path.join("rustboy");
