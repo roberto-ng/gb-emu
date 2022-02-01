@@ -53,7 +53,7 @@ impl MemoryBus {
             }
 
             ECHO_RAM_START ..= ECHO_RAM_END => {
-                // TODO: Implement echo ram
+                // use of this area is prohibited by Nintendo, so we won't implement it
                 Ok(0)
             }
 
@@ -110,7 +110,7 @@ impl MemoryBus {
             }
 
             ECHO_RAM_START ..= ECHO_RAM_END => {
-                // TODO: Implement echo ram
+                // use of this area is prohibited by Nintendo, so we won't implement it
                 Ok(())
             }
 

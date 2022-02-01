@@ -11,6 +11,11 @@ pub struct Data {
 #[derive(Copy, Clone, Debug)]
 pub enum Instruction {
     ADD(R, Data),
+    ADD16Bits(WordSource, WordTarget, Data),
+    INC(ByteTarget, Data),
+    INC16Bits(WordTarget, Data),
+    DEC(ByteTarget, Data),
+    DEC16Bits(WordTarget, Data),
     JP(JumpTest, WordSource, Data),
     LD(LoadType, Data),
     PUSH(RR, Data),
@@ -74,6 +79,7 @@ pub enum ByteSource {
 
 #[derive(Copy, Clone, Debug)]
 pub enum WordSource {
+    Registers(RR),
     SP,
     Immediate16,
     HL,

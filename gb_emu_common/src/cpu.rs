@@ -79,6 +79,71 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::ADD16Bits(source, target, data) => {
+                let source_value = self.get_word_source_value(source)?;
+                let target_value = self.get_word_target_value(target)?;
+                let (new_value, did_overflow) = target_value.overflowing_add(source_value);
+                
+                // set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = did_overflow;
+                self.registers.f.half_carry = (target_value & 0xF) + (source_value & 0xF) > 0xF;
+
+                self.set_word_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::INC(target, data) => {
+                let value = self.get_byte_target_value(target)?;
+                let new_value = value + 1;
+
+                // set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = (value & 0xF) + (1 & 0xF) > 0xF;
+
+                self.set_byte_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::INC16Bits(target, data) => {
+                let value = self.get_word_target_value(target)?;
+                let new_value = value + 1;
+                self.set_word_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::DEC(target, data) => {
+                let value = self.get_byte_target_value(target)?;
+                let new_value = value - 1;
+
+                // set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = (value & 0xF) + (1 & 0xF) > 0xF;
+
+                self.set_byte_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::DEC16Bits(target, data) => {
+                let value = self.get_word_target_value(target)?;
+                let new_value = value - 1;
+                self.set_word_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::JP(test, _source, data) => {
                 let should_jump = self.perform_jump_test(test);
                 if should_jump {
@@ -261,10 +326,34 @@ impl Cpu {
     }
 
     #[inline(always)]
+    fn get_byte_target_value(&mut self, target: &ByteTarget) -> Result<u8> {
+        match target {
+            ByteTarget::Register(r) => {
+                Ok(self.get_r_value(r))
+            }
+
+            ByteTarget::Immediate8 => {
+                let word = self.read_next_word()?;
+                Ok(self.bus.read_byte(word)?)
+            },
+
+            ByteTarget::HL | ByteTarget::HLI | ByteTarget::HLD => {
+                let hl = self.registers.get_hl();
+                Ok(self.bus.read_byte(hl)?)
+            }
+
+            ByteTarget::FF00PlusC => {
+                let address = 0xFF00 + (self.registers.c as u16);
+                Ok(self.bus.read_byte(address)?)
+            }
+        }
+    }
+
+    #[inline(always)]
     fn set_byte_target_value(&mut self, target: &ByteTarget, value: u8) -> Result<()> {
         match target {
             ByteTarget::Register(r) => {
-                self.set_r_value(r, value);
+                self.set_r_value(&r, value);
             }
 
             ByteTarget::Immediate8 => {
@@ -301,6 +390,10 @@ impl Cpu {
     #[inline(always)]
     pub fn get_word_source_value(&self, source: &WordSource) -> Result<u16> {
         match &source {
+            WordSource::Registers(rr) => {
+                Ok(self.get_rr_value(&rr))
+            }
+
             WordSource::HL => {
                 Ok(self.registers.get_hl())
             }
@@ -315,6 +408,27 @@ impl Cpu {
 
             WordSource::SpPlusI8 => {
                 Ok(self.sp.wrapping_add(8))
+            }
+        }
+    }
+
+    #[inline(always)]
+    pub fn get_word_target_value(&mut self, target: &WordTarget) -> Result<u16> {
+        match &target {
+            WordTarget::Direct => {
+                let address = self.read_next_word()?;
+                let lsb = self.bus.read_byte(address)? as u16;
+                let msb = self.bus.read_byte(address)? as u16;
+                let value = (msb << 8) | lsb;
+                Ok(value)
+            }
+
+            WordTarget::HL => {
+                Ok(self.registers.get_hl())
+            }
+
+            WordTarget::SP => {
+                Ok(self.sp)
             }
         }
     }

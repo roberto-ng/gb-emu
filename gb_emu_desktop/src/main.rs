@@ -63,8 +63,8 @@ async fn main() {
                     egui::menu::bar(ui, |ui| {
                         ui.menu_button("File", |ui| {
                             if ui.button("Open").clicked() {
-                                ui.close_menu();
                                 handle_open_file_btn_click(&mut state);
+                                ui.close_menu();
                             }
 
                             if ui.button("Quit").clicked() {
@@ -156,7 +156,8 @@ fn handle_open_file_btn_click(state: &mut State) {
         let cartridge_type = header.cartridge_type;
         let file_size = rom.len();
         let description = format!(
-            "Title: {rom_title}\n\
+            "\
+            Title: {rom_title}\n\
             File name: {file_name}\n\
             Cartridge type: {cartridge_type}\n\
             File size: {file_size} bytes\
