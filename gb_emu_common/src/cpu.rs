@@ -112,12 +112,25 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::Bit(bit_pos, source, data) => {
+                let byte = self.get_byte_source_value(source)?;
+                let bit = byte & (0x01 << bit_pos);
+
+                // set flags
+                self.registers.f.zero = bit == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = true;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::Cp(source, data) => {
                 // Subtract the value in the byte source from A and set flags accordingly, but don't store the result. 
                 // This is useful for ComParing values. 
                 let a = self.registers.a;
                 let value = self.get_byte_source_value(source)?;
-                let result = a - value;
+                let result = a.wrapping_sub(value);
 
                 // set flags
                 self.registers.f.zero = result == 0;
@@ -131,7 +144,7 @@ impl Cpu {
 
             Instruction::Dec(target, data) => {
                 let value = self.get_byte_target_value(target)?;
-                let new_value = value - 1;
+                let new_value = value.wrapping_sub(1);
 
                 // set flags
                 self.registers.f.zero = new_value == 0;
@@ -146,7 +159,7 @@ impl Cpu {
 
             Instruction::Dec16Bits(target, data) => {
                 let value = self.get_word_target_value(target)?;
-                let new_value = value - 1;
+                let new_value = value.wrapping_sub(1);
                 self.set_word_target_value(target, new_value)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
@@ -155,7 +168,7 @@ impl Cpu {
 
             Instruction::Inc(target, data) => {
                 let value = self.get_byte_target_value(target)?;
-                let new_value = value + 1;
+                let new_value = value.wrapping_add(1);
 
                 // set flags
                 self.registers.f.zero = new_value == 0;
@@ -189,6 +202,50 @@ impl Cpu {
                 self.registers.f.subtract = false;
                 self.registers.f.carry = false;
                 self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Res(bit_pos, target, data) => {
+                // Set bit u3 in target to 0. Bit 0 is the rightmost one, bit 7 the leftmost one. 
+                let byte = self.get_byte_target_value(target)?;
+                let result = byte & !(0x01 << bit_pos);
+                self.set_byte_target_value(target, result)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::SbC(source, data) => {
+                // Subtract the value in r8 and the carry flag from A. 
+                let a = self.registers.a;
+                let carry = if self.registers.f.carry { 1 } else { 0 };
+                let value = self.get_byte_source_value(source)?;
+                let result = a.wrapping_sub(value).wrapping_sub(carry);
+                self.registers.a = result;
+
+                // set flags
+                self.registers.f.zero = result == 0;
+                self.registers.f.subtract = true;
+                self.registers.f.carry = value.wrapping_add(carry) > a;
+                self.registers.f.half_carry = ((result ^ value ^ a) & 0x10) == 0x10;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Sub(source, data) => {
+                let a = self.registers.a;
+                let value = self.get_byte_source_value(source)?;
+                let result = a.wrapping_sub(value);
+                self.registers.a = result;
+
+                // set flags
+                self.registers.f.zero = result == 0;
+                self.registers.f.subtract = true;
+                self.registers.f.half_carry = (a & 0xF) < (value & 0xF);
+                self.registers.f.carry = value > a;               
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
