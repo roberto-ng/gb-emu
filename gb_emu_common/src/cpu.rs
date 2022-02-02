@@ -63,7 +63,7 @@ impl Cpu {
                 let value = self.get_r_value(target); // read register
                 let (new_value, did_overflow) = a.overflowing_add(value);
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = did_overflow;
@@ -84,7 +84,7 @@ impl Cpu {
                 let target_value = self.get_word_target_value(target)?;
                 let (new_value, did_overflow) = target_value.overflowing_add(source_value);
                 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = did_overflow;
@@ -102,7 +102,7 @@ impl Cpu {
                 let new_value = a & value;
                 self.registers.a = new_value;
                 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = false;
@@ -116,7 +116,7 @@ impl Cpu {
                 let byte = self.get_byte_source_value(source)?;
                 let bit = byte & (0x01 << bit_pos);
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = bit == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = true;
@@ -132,7 +132,7 @@ impl Cpu {
                 let value = self.get_byte_source_value(source)?;
                 let result = a.wrapping_sub(value);
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = result == 0;
                 self.registers.f.subtract = true;
                 self.registers.f.carry = value > a;
@@ -146,7 +146,7 @@ impl Cpu {
                 let value = self.get_byte_target_value(target)?;
                 let new_value = value.wrapping_sub(1);
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = (value & 0xF) + (1 & 0xF) > 0xF;
@@ -170,7 +170,7 @@ impl Cpu {
                 let value = self.get_byte_target_value(target)?;
                 let new_value = value.wrapping_add(1);
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = (value & 0xF) + (1 & 0xF) > 0xF;
@@ -191,13 +191,13 @@ impl Cpu {
             }
 
             Instruction::Or(source, data) => {
-                // bitwise OR
+                // Bitwise OR
                 let a = self.registers.a;
                 let value = self.get_byte_source_value(source)?;
                 let new_value = a | value;
                 self.registers.a = new_value;
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = false;
@@ -210,26 +210,104 @@ impl Cpu {
             Instruction::Res(bit_pos, target, data) => {
                 // Set bit u3 in target to 0. Bit 0 is the rightmost one, bit 7 the leftmost one. 
                 let byte = self.get_byte_target_value(target)?;
-                let result = byte & !(0x01 << bit_pos);
+                let result = byte & !(0b00000001 << bit_pos);
                 self.set_byte_target_value(target, result)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
 
+            Instruction::RL(target, data) => {
+                // Rotate bits in target left through carry.
+                let c = if self.registers.f.carry { 1 } else { 0 };
+                let value = self.get_byte_target_value(target)?;
+                let new_value = (value << 1) | c;
+                self.set_byte_target_value(target, new_value)?;
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = (value & 0x80) == 0x80;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::RLC(target, data) => {
+                // Rotate target left. 
+                let value = self.get_byte_target_value(target)?;
+                let new_c = (value & 0x80) == 0x80;
+                let new_value = (value << 1) | if new_c { 1 } else { 0 };
+                self.set_byte_target_value(target, new_value)?;
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = new_c;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::RR(target, data) => {
+                // Rotate bits in target right through carry.
+                let c = self.registers.f.carry;
+                let value = self.get_byte_target_value(target)?;
+                let new_value = (value >> 1) | if c { 0x80 } else { 0x00 };
+                self.set_byte_target_value(target, new_value)?;
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = (value & 0x01) == 0x01;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::RRC(target, data) => {
+                // Rotate target right. 
+                let value = self.get_byte_target_value(target)?;
+                let new_c = (value & 0x01) == 0x01;
+                let new_value = (value >> 1) | if new_c { 0x80 } else { 0x00 };
+                self.set_byte_target_value(target, new_value)?;
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = new_c;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::SbC(source, data) => {
-                // Subtract the value in r8 and the carry flag from A. 
+                // Subtract the value in source and the carry flag from A. 
                 let a = self.registers.a;
                 let carry = if self.registers.f.carry { 1 } else { 0 };
                 let value = self.get_byte_source_value(source)?;
                 let result = a.wrapping_sub(value).wrapping_sub(carry);
                 self.registers.a = result;
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = result == 0;
                 self.registers.f.subtract = true;
                 self.registers.f.carry = value.wrapping_add(carry) > a;
                 self.registers.f.half_carry = ((result ^ value ^ a) & 0x10) == 0x10;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Set(bit_pos, target, data) => {
+                //  Set bit u3 in target to 1. Bit 0 is the rightmost one, bit 7 the leftmost one. 
+                let byte = self.get_byte_target_value(target)?;
+                let result = byte | (0b00000001 << bit_pos);
+                self.set_byte_target_value(target, result)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
@@ -241,7 +319,7 @@ impl Cpu {
                 let result = a.wrapping_sub(value);
                 self.registers.a = result;
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = result == 0;
                 self.registers.f.subtract = true;
                 self.registers.f.half_carry = (a & 0xF) < (value & 0xF);
@@ -251,14 +329,31 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::Swap(target, data) => {
+                //  Swap the upper 4 bits in the target and the lower 4 ones. 
+                let value = self.get_byte_target_value(target)?;
+                let upper = (0xF0 & value) >> 4;
+                let lower = (0x0F & value) << 4;
+                let new_value =  upper ^ lower;
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = false;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::XOr(source, data) => {
-                // bitwise XOR
+                // Bitwise XOR
                 let a = self.registers.a;
                 let value = self.get_byte_source_value(source)?;
                 let new_value = a ^ value;
                 self.registers.a = new_value;
 
-                // set flags
+                // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = false;
