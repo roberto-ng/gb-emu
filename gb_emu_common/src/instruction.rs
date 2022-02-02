@@ -10,20 +10,24 @@ pub struct Data {
 
 #[derive(Copy, Clone, Debug)]
 pub enum Instruction {
-    ADD(R, Data),
-    ADD16Bits(WordSource, WordTarget, Data),
-    INC(ByteTarget, Data),
-    INC16Bits(WordTarget, Data),
-    DEC(ByteTarget, Data),
-    DEC16Bits(WordTarget, Data),
+    Add(R, Data),
+    Add16Bits(WordSource, WordTarget, Data),
+    And(ByteSource, Data),
+    Cp(ByteSource, Data),
+    Dec(ByteTarget, Data),
+    Dec16Bits(WordTarget, Data),
+    Inc(ByteTarget, Data),
+    Inc16Bits(WordTarget, Data),
+    Or(ByteSource, Data),
+    XOr(ByteSource, Data),
     JP(JumpTest, WordSource, Data),
-    LD(LoadType, Data),
-    PUSH(RR, Data),
-    POP(RR, Data),
-    CALL(JumpTest, Data),
-    RET(JumpTest, Data),
-    NOP(Data),
-    HALT(Data),
+    Ld(LoadType, Data),
+    Push(RR, Data),
+    Pop(RR, Data),
+    Call(JumpTest, Data),
+    Ret(JumpTest, Data),
+    NoOp(Data),
+    Halt(Data),
 }
 
 // 8-bit registers
@@ -143,42 +147,42 @@ impl Instruction {
     const fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
         match byte {
             0x80 => Some(
-                Instruction::ADD(
+                Instruction::Add(
                     R::B,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x81 => Some(
-                Instruction::ADD(
+                Instruction::Add(
                     R::C,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x82 => Some(
-                Instruction::ADD(
+                Instruction::Add(
                     R::D,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x83 => Some(
-                Instruction::ADD(
+                Instruction::Add(
                     R::E,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x84 => Some(
-                Instruction::ADD(
+                Instruction::Add(
                     R::H,
                     Data::new(1, 4, None, byte),
                 )
             ),
             
             0x85 => Some(
-                Instruction::ADD(
+                Instruction::Add(
                     R::L,
                     Data::new(1, 4, None, byte),
                 )

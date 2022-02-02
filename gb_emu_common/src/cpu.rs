@@ -58,7 +58,7 @@ impl Cpu {
         }
 
         let result = match &instruction {
-            Instruction::ADD(target, data) => {
+            Instruction::Add(target, data) => {
                 let a = self.registers.a;
                 let value = self.get_r_value(target); // read register
                 let (new_value, did_overflow) = a.overflowing_add(value);
@@ -79,7 +79,7 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::ADD16Bits(source, target, data) => {
+            Instruction::Add16Bits(source, target, data) => {
                 let source_value = self.get_word_source_value(source)?;
                 let target_value = self.get_word_target_value(target)?;
                 let (new_value, did_overflow) = target_value.overflowing_add(source_value);
@@ -96,31 +96,40 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::INC(target, data) => {
-                let value = self.get_byte_target_value(target)?;
-                let new_value = value + 1;
-
+            Instruction::And(source, data) => {
+                let a = self.registers.a;
+                let value = self.get_byte_source_value(source)?;
+                let new_value = a & value;
+                self.registers.a = new_value;
+                
                 // set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
-                self.registers.f.half_carry = (value & 0xF) + (1 & 0xF) > 0xF;
+                self.registers.f.carry = false;
+                self.registers.f.half_carry = true;
+                
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
 
-                self.set_byte_target_value(target, new_value)?;
+            Instruction::Cp(source, data) => {
+                // Subtract the value in the byte source from A and set flags accordingly, but don't store the result. 
+                // This is useful for ComParing values. 
+                let a = self.registers.a;
+                let value = self.get_byte_source_value(source)?;
+                let result = a - value;
+
+                // set flags
+                self.registers.f.zero = result == 0;
+                self.registers.f.subtract = true;
+                self.registers.f.carry = value > a;
+                self.registers.f.half_carry = (a & 0xF) < (value & 0xF);
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
 
-            Instruction::INC16Bits(target, data) => {
-                let value = self.get_word_target_value(target)?;
-                let new_value = value + 1;
-                self.set_word_target_value(target, new_value)?;
-
-                let next_pc = self.pc.wrapping_add(data.bytes);
-                (next_pc, data.cycles)
-            }
-
-            Instruction::DEC(target, data) => {
+            Instruction::Dec(target, data) => {
                 let value = self.get_byte_target_value(target)?;
                 let new_value = value - 1;
 
@@ -135,10 +144,68 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::DEC16Bits(target, data) => {
+            Instruction::Dec16Bits(target, data) => {
                 let value = self.get_word_target_value(target)?;
                 let new_value = value - 1;
                 self.set_word_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Inc(target, data) => {
+                let value = self.get_byte_target_value(target)?;
+                let new_value = value + 1;
+
+                // set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = (value & 0xF) + (1 & 0xF) > 0xF;
+
+                self.set_byte_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Inc16Bits(target, data) => {
+                let value = self.get_word_target_value(target)?;
+                let new_value = value + 1;
+                self.set_word_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Or(source, data) => {
+                // bitwise OR
+                let a = self.registers.a;
+                let value = self.get_byte_source_value(source)?;
+                let new_value = a | value;
+                self.registers.a = new_value;
+
+                // set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = false;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::XOr(source, data) => {
+                // bitwise XOR
+                let a = self.registers.a;
+                let value = self.get_byte_source_value(source)?;
+                let new_value = a ^ value;
+                self.registers.a = new_value;
+
+                // set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = false;
+                self.registers.f.half_carry = false;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
@@ -158,7 +225,7 @@ impl Cpu {
                 }
             }
             
-            Instruction::LD(load_type, data) => {
+            Instruction::Ld(load_type, data) => {
                 match &load_type {
                     LoadType::Byte(target, source) => {
                         let value = self.get_byte_source_value(source)?;
@@ -176,7 +243,7 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::PUSH(target, data) => {
+            Instruction::Push(target, data) => {
                 let value =  self.get_rr_value(target);
                 self.push(value)?;
 
@@ -184,7 +251,7 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
             
-            Instruction::POP(target, data) => {
+            Instruction::Pop(target, data) => {
                 let result = self.pop()?;
                 self.set_rr_value(target, result);
 
@@ -192,13 +259,13 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::CALL(test, data) => {
+            Instruction::Call(test, data) => {
                 // call a subroutine/function
                 let should_jump = self.perform_jump_test(test);
                 self.call(should_jump, data)?
             }
 
-            Instruction::RET(test, data) => {
+            Instruction::Ret(test, data) => {
                 // return from a subroutine/function
                 let should_jump = self.perform_jump_test(test);
                 let next_pc = self.ret(should_jump)?;
@@ -211,13 +278,13 @@ impl Cpu {
                 (next_pc, cycles)
             }
 
-            Instruction::NOP(data) => {
+            Instruction::NoOp(data) => {
                 // do nothing ¯\_(ツ)_/¯
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
 
-            Instruction::HALT(data) => {
+            Instruction::Halt(data) => {
                 self.is_halted = true;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
