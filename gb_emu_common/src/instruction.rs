@@ -27,6 +27,9 @@ pub enum Instruction {
     RRC(ByteTarget, Data),
     SbC(ByteSource, Data),
     Set(u8, ByteTarget, Data),
+    SLA(ByteTarget, Data),
+    SRA(ByteTarget, Data),
+    SRL(ByteTarget, Data),
     Sub(ByteSource, Data),
     Swap(ByteTarget, Data),
     XOr(ByteSource, Data),
@@ -130,9 +133,11 @@ impl Data {
             Some(action_cycles) => action_cycles,
             None => {
                 panic!(
-                    "The instruction with opcode {:#06X} has no data about its amount of action cycles but \
-                    it's still trying to use this data. This shouldn't happen.\
-                    \n{:?}",
+                    "\
+                    The instruction with opcode {:#06X} has no data about its amount of action cycles but \
+                    it's still trying to use this data. This shouldn't happen.\n\
+                    {:?}\
+                    ",
                     self.opcode,
                     self,
                 );

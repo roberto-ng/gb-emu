@@ -221,7 +221,7 @@ impl Cpu {
                 // Rotate bits in target left through carry.
                 let c = if self.registers.f.carry { 1 } else { 0 };
                 let value = self.get_byte_target_value(target)?;
-                let new_value = (value << 1) | c;
+                let new_value = value.wrapping_shl(1) | c;
                 self.set_byte_target_value(target, new_value)?;
 
                 // Set flags
@@ -238,7 +238,7 @@ impl Cpu {
                 // Rotate target left. 
                 let value = self.get_byte_target_value(target)?;
                 let new_c = (value & 0x80) == 0x80;
-                let new_value = (value << 1) | if new_c { 1 } else { 0 };
+                let new_value = value.wrapping_shl(1) | if new_c { 1 } else { 0 };
                 self.set_byte_target_value(target, new_value)?;
 
                 // Set flags
@@ -255,7 +255,7 @@ impl Cpu {
                 // Rotate bits in target right through carry.
                 let c = self.registers.f.carry;
                 let value = self.get_byte_target_value(target)?;
-                let new_value = (value >> 1) | if c { 0x80 } else { 0x00 };
+                let new_value = value.wrapping_shr(1) | if c { 0x80 } else { 0x00 };
                 self.set_byte_target_value(target, new_value)?;
 
                 // Set flags
@@ -272,7 +272,7 @@ impl Cpu {
                 // Rotate target right. 
                 let value = self.get_byte_target_value(target)?;
                 let new_c = (value & 0x01) == 0x01;
-                let new_value = (value >> 1) | if new_c { 0x80 } else { 0x00 };
+                let new_value = value.wrapping_shr(1) | if new_c { 0x80 } else { 0x00 };
                 self.set_byte_target_value(target, new_value)?;
 
                 // Set flags
@@ -308,6 +308,51 @@ impl Cpu {
                 let byte = self.get_byte_target_value(target)?;
                 let result = byte | (0b00000001 << bit_pos);
                 self.set_byte_target_value(target, result)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::SLA(target, data) => {
+                // Shift Left Arithmetically
+                let value = self.get_byte_target_value(target)?;
+                let new_value = value.wrapping_shl(1);
+                self.set_byte_target_value(target, new_value)?;
+
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = (value & 0x80) == 0x80;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::SRA(target, data) => {
+                // Shift Left Arithmetically
+                let value = self.get_byte_target_value(target)?;
+                let new_value = value.wrapping_shr(1) | (value & 0x80);
+                self.set_byte_target_value(target, new_value)?;
+
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = (value & 0x01) == 0x01;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::SRL(target, data) => {
+                // Shift Left Arithmetically
+                let value = self.get_byte_target_value(target)?;
+                let new_value = value.wrapping_shr(1);
+                self.set_byte_target_value(target, new_value)?;
+
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = (value & 0x01) == 0x01;
+                self.registers.f.half_carry = false;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
