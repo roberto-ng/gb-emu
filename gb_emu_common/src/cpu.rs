@@ -11,6 +11,8 @@ pub struct Cpu {
     sp: u16,
     cycles: u8,
     is_halted: bool,
+    ime: bool, // Interrupt Master Enable Flag 
+    set_ime: bool, // set the IME flag only after the next instruction
 }
 
 impl Cpu {
@@ -23,6 +25,8 @@ impl Cpu {
                 sp: 0,
                 cycles: 0,
                 is_halted: false,
+                ime: false,
+                set_ime: false,
             }
         )
     }
@@ -55,6 +59,11 @@ impl Cpu {
     fn execute(&mut self, instruction: &Instruction) -> Result<(u16, u8)> {
         if self.is_halted {
             return Ok((self.pc, 0));
+        }
+
+        if self.set_ime {
+            self.ime = true;
+            self.set_ime = false;
         }
 
         let result = match &instruction {
@@ -161,6 +170,14 @@ impl Cpu {
                 let value = self.get_word_target_value(target)?;
                 let new_value = value.wrapping_sub(1);
                 self.set_word_target_value(target, new_value)?;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::EI(data) => {
+                // Enable Interrupts by setting the IME flag. The flag is only set after the instruction following EI. 
+                self.set_ime = true;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
@@ -282,6 +299,14 @@ impl Cpu {
                 self.registers.f.half_carry = false;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::RST(vec, data) => {
+                let next_instruction = self.pc.wrapping_add(data.bytes);
+                self.push(next_instruction)?;
+
+                let next_pc = vec.clone() as u16;
                 (next_pc, data.cycles)
             }
 
@@ -408,7 +433,7 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::JP(test, _source, data) => {
+            Instruction::Jp(test, _source, data) => {
                 let should_jump = self.perform_jump_test(test);
                 if should_jump {
                     let low_byte = self.bus.read_byte(self.pc + 1)? as u16;
@@ -419,6 +444,20 @@ impl Cpu {
                 } else {
                     let next_pc = self.pc.wrapping_add(data.bytes);
                     (next_pc, data.cycles)
+                }
+            }
+
+            Instruction::JR(test, data) => {
+                // Relative Jump by adding e8 to the address of the instruction following the JR
+                let should_jump = self.perform_jump_test(test);
+                let next_instruction = self.pc.wrapping_add(data.bytes);
+                let byte = self.read_next_byte()?;
+
+                if should_jump && byte != 0 {
+                    let next_pc = next_instruction + (byte as u16);
+                    (next_pc, data.cycles)
+                } else {
+                    (next_instruction, data.cycles)
                 }
             }
             
@@ -473,6 +512,14 @@ impl Cpu {
                 };
 
                 (next_pc, cycles)
+            }
+
+            Instruction::RetI(data) => {
+                // Return from subroutine and enable interrupts. This is basically equivalent 
+                // to executing EI then RET, meaning that IME is set right after this instruction.
+                let next_pc = self.ret(true)?;
+                self.ime = true;
+                (next_pc, data.cycles)
             }
 
             Instruction::NoOp(data) => {

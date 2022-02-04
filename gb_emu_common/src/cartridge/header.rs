@@ -22,12 +22,12 @@ impl Header {
         let is_cgb = cgb_flag == 0x80 || cgb_flag == 0xC0;
     
         // the title size is different on CGB
-        let title = if is_cgb {
+        let title_buffer = if is_cgb {
             &rom[0x0134 ..= 0x013E]
         } else {
             &rom[0x0134 ..= 0x0143]
         };
-        let title = decode_rom_title(title);
+        let title = decode_rom_title(title_buffer);
         let cartridge_type = decode_cartridge_type(rom[0x0147])?;
         let rom_bank_amount = get_amount_of_rom_banks(rom[0x0148])?;
         let ram_bank_amount = get_amount_of_ram_banks(rom[0x0149])?;

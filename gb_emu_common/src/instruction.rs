@@ -17,6 +17,7 @@ pub enum Instruction {
     Cp(ByteSource, Data),
     Dec(ByteTarget, Data),
     Dec16Bits(WordTarget, Data),
+    EI(Data),
     Inc(ByteTarget, Data),
     Inc16Bits(WordTarget, Data),
     Or(ByteSource, Data),
@@ -25,6 +26,7 @@ pub enum Instruction {
     RLC(ByteTarget, Data),
     RR(ByteTarget, Data),
     RRC(ByteTarget, Data),
+    RST(u8, Data),
     SbC(ByteSource, Data),
     Set(u8, ByteTarget, Data),
     SLA(ByteTarget, Data),
@@ -33,12 +35,14 @@ pub enum Instruction {
     Sub(ByteSource, Data),
     Swap(ByteTarget, Data),
     XOr(ByteSource, Data),
-    JP(JumpTest, WordSource, Data),
+    Jp(JumpTest, WordSource, Data),
+    JR(JumpTest, Data),
     Ld(LoadType, Data),
     Push(RR, Data),
     Pop(RR, Data),
     Call(JumpTest, Data),
     Ret(JumpTest, Data),
+    RetI(Data),
     NoOp(Data),
     Halt(Data),
 }
@@ -205,7 +209,7 @@ impl Instruction {
             
             // JP nz, u16
             0xC2 => Some(
-                Instruction::JP(
+                Instruction::Jp(
                     JumpTest::NotZero,
                     WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
@@ -214,7 +218,7 @@ impl Instruction {
             
             // JP n16
             0xC3 => Some(
-                Instruction::JP(
+                Instruction::Jp(
                     JumpTest::Always,
                     WordSource::Immediate16,
                     Data::new(3, 16, None, byte),
@@ -223,7 +227,7 @@ impl Instruction {
             
             // JP z, n16
             0xCA => Some(
-                Instruction::JP(
+                Instruction::Jp(
                     JumpTest::Zero,
                     WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
@@ -232,7 +236,7 @@ impl Instruction {
 
             // JP nc, n16
             0xD2 => Some(
-                Instruction::JP(
+                Instruction::Jp(
                     JumpTest::NotCarry,
                     WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
@@ -241,7 +245,7 @@ impl Instruction {
 
             // JP cc, n16
             0xDA => Some(
-                Instruction::JP(
+                Instruction::Jp(
                     JumpTest::Carry,
                     WordSource::Immediate16,
                     Data::new(3, 12, Some(16), byte),
@@ -250,7 +254,7 @@ impl Instruction {
 
             // JP HL
             0xE9 => Some(
-                Instruction::JP(
+                Instruction::Jp(
                     JumpTest::Always,
                     WordSource::HL,
                     Data::new(1,4, None, byte),
