@@ -303,6 +303,8 @@ impl Cpu {
             }
 
             Instruction::RST(vec, data) => {
+                // Call address vec. This is a shorter and faster equivalent to CALL 
+                // for suitable values of vec (0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, and 0x38).
                 let next_instruction = self.pc.wrapping_add(data.bytes);
                 self.push(next_instruction)?;
 
