@@ -689,6 +689,11 @@ impl Cpu {
         let byte = match &source {
             ByteSource::Register(r) => self.get_r_value(r),
 
+            ByteSource::Registers(rr) => {
+                let word = self.get_rr_value(rr);
+                self.bus.read_byte(word)?
+            }
+
             ByteSource::Immediate8 => self.read_next_byte()?,
 
             ByteSource::HL => {
@@ -719,8 +724,13 @@ impl Cpu {
 
     #[inline(always)]
     fn get_byte_target_value(&mut self, target: &ByteTarget) -> Result<u8> {
-        match target {
+        match &target {
             ByteTarget::Register(r) => Ok(self.get_r_value(r)),
+
+            ByteTarget::Registers(rr) => {
+                let word = self.get_rr_value(rr);
+                Ok(self.bus.read_byte(word)?)
+            }
 
             ByteTarget::Immediate8 => {
                 let word = self.read_next_word()?;
@@ -741,9 +751,14 @@ impl Cpu {
 
     #[inline(always)]
     fn set_byte_target_value(&mut self, target: &ByteTarget, value: u8) -> Result<()> {
-        match target {
+        match &target {
             ByteTarget::Register(r) => {
-                self.set_r_value(&r, value);
+                self.set_r_value(r, value);
+            }
+
+            ByteTarget::Registers(rr) => {
+                let word = self.get_rr_value(rr);
+                self.bus.write_byte(word, value)?;
             }
 
             ByteTarget::Immediate8 => {
@@ -782,8 +797,6 @@ impl Cpu {
         match &source {
             WordSource::Registers(rr) => Ok(self.get_rr_value(&rr)),
 
-            WordSource::HL => Ok(self.registers.get_hl()),
-
             WordSource::Immediate16 => self.read_next_word(),
 
             WordSource::SP => Ok(self.sp),
@@ -795,6 +808,8 @@ impl Cpu {
     #[inline(always)]
     pub fn get_word_target_value(&mut self, target: &WordTarget) -> Result<u16> {
         match &target {
+            WordTarget::Registers(rr) => Ok(self.get_rr_value(&rr)),
+
             WordTarget::Direct => {
                 let address = self.read_next_word()?;
                 let lsb = self.bus.read_byte(address)? as u16;
@@ -803,8 +818,6 @@ impl Cpu {
                 Ok(value)
             }
 
-            WordTarget::HL => Ok(self.registers.get_hl()),
-
             WordTarget::SP => Ok(self.sp),
         }
     }
@@ -812,6 +825,10 @@ impl Cpu {
     #[inline(always)]
     pub fn set_word_target_value(&mut self, target: &WordTarget, value: u16) -> Result<()> {
         match &target {
+            WordTarget::Registers(rr) => {
+                self.set_rr_value(rr, value);
+            }
+
             WordTarget::Direct => {
                 let address = self.read_next_word()?;
                 let lsb = (0x00FF & value) as u8;
@@ -819,10 +836,6 @@ impl Cpu {
 
                 self.bus.write_byte(address, lsb)?;
                 self.bus.write_byte(address.wrapping_add(1), msb)?;
-            }
-
-            WordTarget::HL => {
-                self.registers.set_hl(value);
             }
 
             WordTarget::SP => {

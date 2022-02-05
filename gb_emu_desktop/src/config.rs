@@ -21,7 +21,6 @@ pub fn save_config(config_file: ConfigFile, content: &str) -> std::io::Result<()
         let app_config_path = config_path.join("rustboy");
         let config_file_name = config_file.get_file_name();
         let config_file_path = app_config_path.join(&config_file_name);
-        println!("{config_file_path:?}");
         fs::create_dir_all(&app_config_path)?; // create dir if it not exists
 
         let mut file = fs::File::create(&config_file_path)?;

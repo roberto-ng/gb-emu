@@ -87,6 +87,7 @@ pub enum JumpTest {
 #[derive(Copy, Clone, Debug)]
 pub enum ByteTarget {
     Register(R),
+    Registers(RR),
     Immediate8,
     HL,
     HLI,
@@ -97,6 +98,7 @@ pub enum ByteTarget {
 #[derive(Copy, Clone, Debug)]
 pub enum ByteSource {
     Register(R),
+    Registers(RR),
     Immediate8,
     HL,
     HLI,
@@ -109,15 +111,14 @@ pub enum WordSource {
     Registers(RR),
     SP,
     Immediate16,
-    HL,
     SpPlusI8,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub enum WordTarget {
+    Registers(RR),
     SP,
     Direct,
-    HL,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -171,6 +172,193 @@ impl Instruction {
 
     const fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
         match byte {
+            0x00 => Some(
+                Instruction::NoOp(
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x01 => Some(
+                Instruction::Ld(
+                    LoadType::Word(
+                        WordTarget::Registers(RR::BC), 
+                        WordSource::Immediate16
+                    ), 
+                    Data::new(3, 3, None, byte)
+                )
+            ),
+
+            0x02 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Registers(RR::BC),
+                        ByteSource::Register(R::A)
+                    ),
+                    Data::new(1, 2, None, byte)
+                )
+            ),
+
+            0x03 => Some(
+                Instruction::Inc(
+                    ByteTarget::Registers(RR::BC),
+                    Data::new(1, 2, None, byte)
+                )
+            ),
+
+            0x04 => Some(
+                Instruction::Inc(
+                    ByteTarget::Register(R::B),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x05 => Some(
+                Instruction::Dec(
+                    ByteTarget::Register(R::B),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x06 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::B),
+                        ByteSource::Immediate8,
+                    ),
+                    Data::new(2, 2, None, byte)
+                )
+            ),
+
+            0x07 => Some(
+                Instruction::RLC(
+                    ByteTarget::Register(R::A),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x08 => Some(
+                Instruction::Ld(
+                    LoadType::Word(
+                        WordTarget::Direct,
+                        WordSource::SP
+                    ),
+                    Data::new(3, 5, None, byte)
+                )
+            ),
+
+            0x09 => Some(
+                Instruction::Add16Bits(
+                    WordSource::Registers(RR::BC),
+                    WordTarget::Registers(RR::HL),
+                    Data::new(1, 2, None, byte)
+                ),
+            ),
+
+            0x0A => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::A),
+                        ByteSource::Registers(RR::BC),
+                    ),
+                    Data::new(1, 2, None, byte)
+                )
+            ),
+
+            0x0B => Some(
+                Instruction::Dec16Bits(
+                    WordTarget::Registers(RR::BC),
+                    Data::new(1, 2, None, byte)
+                )
+            ),
+
+            0x0C => Some(
+                Instruction::Inc(
+                    ByteTarget::Register(R::C),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x0D => Some(
+                Instruction::Dec(
+                    ByteTarget::Register(R::C),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x0E => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::C),
+                        ByteSource::Immediate8,
+                    ),
+                    Data::new(2, 2, None, byte)
+                )
+            ),
+
+            0x0F => Some(
+                Instruction::RRC(
+                    ByteTarget::Register(R::A),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x10 => Some(
+                Instruction::Stop(
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x11 => Some(
+                Instruction::Ld(
+                    LoadType::Word(
+                        WordTarget::Registers(RR::DE),
+                        WordSource::Immediate16,
+                    ),
+                    Data::new(3, 3, None, byte)
+                )
+            ),
+
+            0x12 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Registers(RR::DE),
+                        ByteSource::Register(R::A),
+                    ),
+                    Data::new(1, 2, None, byte)
+                )
+            ),
+
+            0x13 => Some(
+                Instruction::Inc16Bits(
+                    WordTarget::Registers(RR::DE),
+                    Data::new(1, 2, None, byte)
+                )
+            ),
+
+            0x14 => Some(
+                Instruction::Inc(
+                    ByteTarget::Registers(RR::HL),
+                    Data::new(1, 3, None, byte)
+                ),
+            ),
+
+            0x15 => Some(
+                Instruction::Dec(
+                    ByteTarget::Register(R::D),
+                    Data::new(1, 1, None, byte)
+                )
+            ),
+
+            0x16 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::D),
+                        ByteSource::Immediate8,
+                    ),
+                    Data::new(2, 2, None, byte)
+                )
+            ),
+
             0x80 => Some(
                 Instruction::Add(
                     R::B,
@@ -262,7 +450,7 @@ impl Instruction {
             0xE9 => Some(
                 Instruction::Jp(
                     JumpTest::Always,
-                    WordSource::HL,
+                    WordSource::Registers(RR::HL),
                     Data::new(1,4, None, byte),
                 )
             ),
