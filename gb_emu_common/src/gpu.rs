@@ -22,8 +22,8 @@ fn empty_tile() -> Tile {
 
 impl Gpu {
     pub fn new() -> Gpu {
-        Gpu { 
-            vram: [0; VRAM_SIZE], 
+        Gpu {
+            vram: [0; VRAM_SIZE],
             oam: [0; OAM_SIZE],
             tile_set: [empty_tile(); 0x180],
         }
@@ -40,7 +40,9 @@ impl Gpu {
 
         // If our address is greater than 0x1800, we're not writing to the tile set storage
         // so we can just return.
-        if vram_pos >= 0x1800 { return Ok(()) }
+        if vram_pos >= 0x1800 {
+            return Ok(());
+        }
 
         // Tiles rows are encoded in two bytes with the first byte always
         // on an even address. Bitwise ANDing the address with 0xffe

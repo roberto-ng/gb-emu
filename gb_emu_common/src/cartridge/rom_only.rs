@@ -1,7 +1,6 @@
-use crate::cartridge::*;
 use self::header::*;
-use self::cartridge_type::*;
-use crate::{Result, EmulationError};
+use crate::cartridge::*;
+use crate::{EmulationError, Result};
 
 pub struct RomOnlyCartridge {
     rom: Vec<u8>,
@@ -14,9 +13,9 @@ impl RomOnlyCartridge {
         let rom_size = ROM_BANK_SIZE * 2;
         if rom.len() != rom_size || header.rom_bank_amount != 2 {
             // this file has an invalid size
-            return Err(EmulationError::InvalidRom)
+            return Err(EmulationError::InvalidRom);
         }
-    
+
         let has_ram = header.ram_bank_amount > 0;
         let ram = if has_ram {
             Some([0; RAM_BANK_SIZE])
@@ -24,26 +23,16 @@ impl RomOnlyCartridge {
             None
         };
 
-        Ok(
-            RomOnlyCartridge {
-                rom,
-                ram,
-                header,
-            }
-        )
+        Ok(RomOnlyCartridge { rom, ram, header })
     }
 }
 
 impl Cartridge for RomOnlyCartridge {
     fn read_byte_rom(&self, address: usize) -> Result<u8> {
         match address {
-            ROM_BANK_0_START ..= ROM_BANK_N_END => {
-                Ok(self.rom[address])
-            }
+            ROM_BANK_0_START..=ROM_BANK_N_END => Ok(self.rom[address]),
 
-            _ => {
-                Err(EmulationError::InvalidMemoryRead { address })
-            }
+            _ => Err(EmulationError::InvalidMemoryRead { address }),
         }
     }
 
@@ -65,8 +54,8 @@ impl Cartridge for RomOnlyCartridge {
             Some(ram) => {
                 ram[pos] = value;
                 Ok(())
-            },
-            None => Err(EmulationError::InvalidMemoryWrite { address, value })
+            }
+            None => Err(EmulationError::InvalidMemoryWrite { address, value }),
         }
     }
 
@@ -83,7 +72,7 @@ impl Cartridge for RomOnlyCartridge {
                 ram_banks
             }
 
-            None => Vec::new()
+            None => Vec::new(),
         }
     }
 

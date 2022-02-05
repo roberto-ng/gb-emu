@@ -1,6 +1,6 @@
 use std::fmt::{self};
 
-use num_enum::{TryFromPrimitive, IntoPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, TryFromPrimitive, IntoPrimitive, PartialEq)]
@@ -67,7 +67,7 @@ impl fmt::Display for CartridgeType {
             Self::HuC3 => "HuC3",
             Self::HuC1RamBattery => "HuC1 + RAM + battery",
         };
-        
+
         write!(f, "{name}")
     }
 }

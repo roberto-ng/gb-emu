@@ -1,9 +1,9 @@
-pub mod memory_bus;
+pub mod cartridge;
 pub mod cpu;
 pub mod cpu_registers;
-pub mod instruction;
 pub mod gpu;
-pub mod cartridge;
+pub mod instruction;
+pub mod memory_bus;
 
 use std::fmt;
 
@@ -16,12 +16,12 @@ pub enum EmulationError {
     InvalidMemoryRead { address: usize },
     InvalidMemoryWrite { address: usize, value: u8 },
     UnknownOpcode { opcode: u8, is_prefixed: bool },
-    InvalidRomIndex { index: usize, },
+    InvalidRomIndex { index: usize },
     InvalidRom,
-    UnknownCartridgeType { code: u8, },
+    UnknownCartridgeType { code: u8 },
     UnsupportedCartridgeType { cartridge_type: CartridgeType },
-    InvalidRomSizeCode { code: u8, },
-    InvalidRamSizeCode { code: u8, },
+    InvalidRomSizeCode { code: u8 },
+    InvalidRamSizeCode { code: u8 },
 }
 
 impl fmt::Display for EmulationError {
@@ -32,10 +32,16 @@ impl fmt::Display for EmulationError {
             }
 
             &Self::InvalidMemoryWrite { address, value } => {
-                write!(f, "Invalid write read on address {address:#06X} with value {value:#06X}")
+                write!(
+                    f,
+                    "Invalid write read on address {address:#06X} with value {value:#06X}"
+                )
             }
 
-            &Self::UnknownOpcode { opcode, is_prefixed } => {
+            &Self::UnknownOpcode {
+                opcode,
+                is_prefixed,
+            } => {
                 // text that says if the opcode is prefixed or not
                 let prefixed_or_not_text = if is_prefixed {
                     "prefixed"
@@ -59,19 +65,28 @@ impl fmt::Display for EmulationError {
             }
 
             &Self::InvalidRomSizeCode { code } => {
-                write!(f, "This ROM's header informs an invalid ROM size code {code:#04X}")
+                write!(
+                    f,
+                    "This ROM's header informs an invalid ROM size code {code:#04X}"
+                )
             }
 
             &Self::InvalidRamSizeCode { code } => {
-                write!(f, "This ROM's header informs an invalid RAM size code {code:#04X}")
+                write!(
+                    f,
+                    "This ROM's header informs an invalid RAM size code {code:#04X}"
+                )
             }
 
             &Self::UnsupportedCartridgeType { cartridge_type } => {
-                write!(f, "The cartridge type \"{cartridge_type}\" is not supported")
+                write!(
+                    f,
+                    "The cartridge type \"{cartridge_type}\" is not supported"
+                )
             }
         }
     }
-} 
+}
 
 #[cfg(test)]
 mod tests {

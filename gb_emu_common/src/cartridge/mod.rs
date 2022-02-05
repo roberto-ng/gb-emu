@@ -1,11 +1,11 @@
-pub mod rom_only;
 pub mod cartridge_type;
 pub mod header;
+pub mod rom_only;
 
-use crate::{Result, EmulationError};
-use self::header::Header;
 use self::cartridge_type::*;
+use self::header::Header;
 use self::rom_only::RomOnlyCartridge;
+use crate::{EmulationError, Result};
 
 // each RAM bank has KiB of RAM
 type RamBank = [u8; RAM_BANK_SIZE];
@@ -30,8 +30,8 @@ pub fn create_cartridge(rom: Vec<u8>) -> Result<impl Cartridge> {
         }
 
         _ => {
-            let error = EmulationError::UnsupportedCartridgeType { 
-                cartridge_type: header.cartridge_type 
+            let error = EmulationError::UnsupportedCartridgeType {
+                cartridge_type: header.cartridge_type,
             };
             Err(error)
         }

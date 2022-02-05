@@ -1,7 +1,7 @@
-use crate::EmulationError;
 use crate::cpu_registers::*;
 use crate::instruction::*;
 use crate::memory_bus::*;
+use crate::EmulationError;
 use crate::Result;
 
 pub struct Cpu {
@@ -11,24 +11,24 @@ pub struct Cpu {
     sp: u16,
     cycles: u8,
     is_halted: bool,
-    ime: bool, // Interrupt Master Enable Flag 
+    ime: bool,     // Interrupt Master Enable Flag
     set_ime: bool, // set the IME flag only after the next instruction
+    is_stopped: bool,
 }
 
 impl Cpu {
     pub fn new(rom: Vec<u8>) -> Result<Cpu> {
-        Ok(
-            Cpu {
-                registers: Registers::new(),
-                bus: MemoryBus::new(rom)?,
-                pc: 0,
-                sp: 0,
-                cycles: 0,
-                is_halted: false,
-                ime: false,
-                set_ime: false,
-            }
-        )
+        Ok(Cpu {
+            registers: Registers::new(),
+            bus: MemoryBus::new(rom)?,
+            pc: 0,
+            sp: 0,
+            cycles: 0,
+            is_halted: false,
+            ime: false,
+            set_ime: false,
+            is_stopped: false,
+        })
     }
 
     pub fn step(&mut self) -> Result<()> {
@@ -36,23 +36,24 @@ impl Cpu {
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
             // if this is a prefixed instruction, read the next byte instead
-            instruction_byte = self.bus.read_byte(self.pc + 1)?;
+            instruction_byte = self.bus.read_byte(self.pc.wrapping_add(1))?;
         }
 
         match Instruction::from_byte(instruction_byte, prefixed) {
             Some(instruction) => {
                 let (next_pc, cycles) = self.execute(&instruction)?;
                 self.pc = next_pc;
-                self.cycles += cycles;
+                self.cycles = self.cycles.wrapping_add(cycles);
                 Ok(())
             }
+
             None => {
                 let err = EmulationError::UnknownOpcode {
                     opcode: instruction_byte,
                     is_prefixed: prefixed,
                 };
                 Err(err)
-            },
+            }
         }
     }
 
@@ -92,7 +93,7 @@ impl Cpu {
                 let source_value = self.get_word_source_value(source)?;
                 let target_value = self.get_word_target_value(target)?;
                 let (new_value, did_overflow) = target_value.overflowing_add(source_value);
-                
+
                 // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
@@ -110,13 +111,13 @@ impl Cpu {
                 let value = self.get_byte_source_value(source)?;
                 let new_value = a & value;
                 self.registers.a = new_value;
-                
+
                 // Set flags
                 self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = false;
                 self.registers.f.half_carry = true;
-                
+
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
@@ -134,9 +135,21 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::CCF(data) => {
+                // Complement Carry Flag.
+                self.registers.f.carry = !self.registers.f.carry;
+
+                // Set other flags
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::Cp(source, data) => {
-                // Subtract the value in the byte source from A and set flags accordingly, but don't store the result. 
-                // This is useful for ComParing values. 
+                // Subtract the value in the byte source from A and set flags accordingly, but don't store the result.
+                // This is useful for ComParing values.
                 let a = self.registers.a;
                 let value = self.get_byte_source_value(source)?;
                 let result = a.wrapping_sub(value);
@@ -146,6 +159,50 @@ impl Cpu {
                 self.registers.f.subtract = true;
                 self.registers.f.carry = value > a;
                 self.registers.f.half_carry = (a & 0xF) < (value & 0xF);
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Cpl(data) => {
+                // ComPLement accumulator (A = ~A).
+                self.registers.a = !self.registers.a;
+
+                // Set flags
+                self.registers.f.subtract = true;
+                self.registers.f.half_carry = true;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::DAA(data) => {
+                // Decimal Adjust Accumulator to get a correct BCD representation after an arithmetic instruction.
+                let a = self.registers.a;
+                let mut new_value = a;
+                let mut carry = false;
+                if !self.registers.f.subtract {
+                    if self.registers.f.half_carry || (a & 0x0F) > 9 {
+                        new_value = new_value.wrapping_add(0x06);
+                    }
+                    if self.registers.f.carry || a > 0x9F {
+                        new_value = new_value.wrapping_add(0x60);
+                        carry = true;
+                    }
+                } else {
+                    if self.registers.f.half_carry {
+                        new_value = (a.wrapping_sub(0x06)) & 0xFF;
+                    } else {
+                        new_value = new_value.wrapping_sub(0x60);
+                    }
+                }
+                new_value &= 0xFF;
+                self.registers.a = new_value;
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.carry = carry;
+                self.registers.f.half_carry = true;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
@@ -175,8 +232,16 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::DI(data) => {
+                // Disable Interrupts by clearing the IME flag.
+                self.ime = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::EI(data) => {
-                // Enable Interrupts by setting the IME flag. The flag is only set after the instruction following EI. 
+                // Enable Interrupts by setting the IME flag. The flag is only set after the instruction following EI.
                 self.set_ime = true;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
@@ -200,7 +265,7 @@ impl Cpu {
 
             Instruction::Inc16Bits(target, data) => {
                 let value = self.get_word_target_value(target)?;
-                let new_value = value + 1;
+                let new_value = value.wrapping_add(1);
                 self.set_word_target_value(target, new_value)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
@@ -225,7 +290,7 @@ impl Cpu {
             }
 
             Instruction::Res(bit_pos, target, data) => {
-                // Set bit u3 in target to 0. Bit 0 is the rightmost one, bit 7 the leftmost one. 
+                // Set bit u3 in target to 0. Bit 0 is the rightmost one, bit 7 the leftmost one.
                 let byte = self.get_byte_target_value(target)?;
                 let result = byte & !(0b00000001 << bit_pos);
                 self.set_byte_target_value(target, result)?;
@@ -252,7 +317,7 @@ impl Cpu {
             }
 
             Instruction::RLC(target, data) => {
-                // Rotate target left. 
+                // Rotate target left.
                 let value = self.get_byte_target_value(target)?;
                 let new_c = (value & 0x80) == 0x80;
                 let new_value = value.wrapping_shl(1) | if new_c { 1 } else { 0 };
@@ -286,7 +351,7 @@ impl Cpu {
             }
 
             Instruction::RRC(target, data) => {
-                // Rotate target right. 
+                // Rotate target right.
                 let value = self.get_byte_target_value(target)?;
                 let new_c = (value & 0x01) == 0x01;
                 let new_value = value.wrapping_shr(1) | if new_c { 0x80 } else { 0x00 };
@@ -303,7 +368,7 @@ impl Cpu {
             }
 
             Instruction::RST(vec, data) => {
-                // Call address vec. This is a shorter and faster equivalent to CALL 
+                // Call address vec. This is a shorter and faster equivalent to CALL
                 // for suitable values of vec (0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, and 0x38).
                 let next_instruction = self.pc.wrapping_add(data.bytes);
                 self.push(next_instruction)?;
@@ -313,7 +378,7 @@ impl Cpu {
             }
 
             Instruction::SbC(source, data) => {
-                // Subtract the value in source and the carry flag from A. 
+                // Subtract the value in source and the carry flag from A.
                 let a = self.registers.a;
                 let carry = if self.registers.f.carry { 1 } else { 0 };
                 let value = self.get_byte_source_value(source)?;
@@ -330,8 +395,20 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::SCF(data) => {
+                // Set Carry Flag.
+                self.registers.f.carry = true;
+                
+                // Set other flags
+                self.registers.f.subtract = false;
+                self.registers.f.half_carry = false;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::Set(bit_pos, target, data) => {
-                //  Set bit u3 in target to 1. Bit 0 is the rightmost one, bit 7 the leftmost one. 
+                //  Set bit u3 in target to 1. Bit 0 is the rightmost one, bit 7 the leftmost one.
                 let byte = self.get_byte_target_value(target)?;
                 let result = byte | (0b00000001 << bit_pos);
                 self.set_byte_target_value(target, result)?;
@@ -385,6 +462,13 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
+            Instruction::Stop(data) => {
+                self.is_stopped = true;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
             Instruction::Sub(source, data) => {
                 let a = self.registers.a;
                 let value = self.get_byte_source_value(source)?;
@@ -395,18 +479,18 @@ impl Cpu {
                 self.registers.f.zero = result == 0;
                 self.registers.f.subtract = true;
                 self.registers.f.half_carry = (a & 0xF) < (value & 0xF);
-                self.registers.f.carry = value > a;               
+                self.registers.f.carry = value > a;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
 
             Instruction::Swap(target, data) => {
-                //  Swap the upper 4 bits in the target and the lower 4 ones. 
+                //  Swap the upper 4 bits in the target and the lower 4 ones.
                 let value = self.get_byte_target_value(target)?;
                 let upper = (0xF0 & value) >> 4;
                 let lower = (0x0F & value) << 4;
-                let new_value =  upper ^ lower;
+                let new_value = upper ^ lower;
 
                 // Set flags
                 self.registers.f.zero = new_value == 0;
@@ -438,8 +522,8 @@ impl Cpu {
             Instruction::Jp(test, _source, data) => {
                 let should_jump = self.perform_jump_test(test);
                 if should_jump {
-                    let low_byte = self.bus.read_byte(self.pc + 1)? as u16;
-                    let high_byte = self.bus.read_byte(self.pc + 2)? as u16;
+                    let low_byte = self.bus.read_byte(self.pc.wrapping_add(1))? as u16;
+                    let high_byte = self.bus.read_byte(self.pc.wrapping_add(2))? as u16;
                     let next_pc = (high_byte << 8) | low_byte;
                     let cycles = data.get_action_cycles();
                     (next_pc, cycles)
@@ -456,39 +540,38 @@ impl Cpu {
                 let byte = self.read_next_byte()?;
 
                 if should_jump && byte != 0 {
-                    let next_pc = next_instruction + (byte as u16);
+                    let next_pc = next_instruction.wrapping_add(byte as u16);
                     (next_pc, data.cycles)
                 } else {
                     (next_instruction, data.cycles)
                 }
             }
-            
+
             Instruction::Ld(load_type, data) => {
                 match &load_type {
                     LoadType::Byte(target, source) => {
                         let value = self.get_byte_source_value(source)?;
-                        self.set_byte_target_value(target, value)?;        
+                        self.set_byte_target_value(target, value)?;
                     }
 
                     LoadType::Word(target, source) => {
                         let value = self.get_word_source_value(source)?;
                         self.set_word_target_value(target, value)?;
-
                     }
-                }  
-                
+                }
+
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
 
             Instruction::Push(target, data) => {
-                let value =  self.get_rr_value(target);
+                let value = self.get_rr_value(target);
                 self.push(value)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
             }
-            
+
             Instruction::Pop(target, data) => {
                 let result = self.pop()?;
                 self.set_rr_value(target, result);
@@ -517,7 +600,7 @@ impl Cpu {
             }
 
             Instruction::RetI(data) => {
-                // Return from subroutine and enable interrupts. This is basically equivalent 
+                // Return from subroutine and enable interrupts. This is basically equivalent
                 // to executing EI then RET, meaning that IME is set right after this instruction.
                 let next_pc = self.ret(true)?;
                 self.ime = true;
@@ -604,31 +687,27 @@ impl Cpu {
     #[inline(always)]
     fn get_byte_source_value(&mut self, source: &ByteSource) -> Result<u8> {
         let byte = match &source {
-            ByteSource::Register(r) => {
-                self.get_r_value(r)
-            }
-            
-            ByteSource::Immediate8 => {
-                self.read_next_byte()?
-            }
-            
+            ByteSource::Register(r) => self.get_r_value(r),
+
+            ByteSource::Immediate8 => self.read_next_byte()?,
+
             ByteSource::HL => {
                 let hl = self.registers.get_hl();
                 self.bus.read_byte(hl)?
             }
-            
+
             ByteSource::HLI => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_add(1)); // increment HL
                 self.bus.read_byte(hl)?
             }
-            
+
             ByteSource::HLD => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_sub(1)); // decrement HL
                 self.bus.read_byte(hl)?
             }
-            
+
             ByteSource::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
                 self.bus.read_byte(address)?
@@ -641,14 +720,12 @@ impl Cpu {
     #[inline(always)]
     fn get_byte_target_value(&mut self, target: &ByteTarget) -> Result<u8> {
         match target {
-            ByteTarget::Register(r) => {
-                Ok(self.get_r_value(r))
-            }
+            ByteTarget::Register(r) => Ok(self.get_r_value(r)),
 
             ByteTarget::Immediate8 => {
                 let word = self.read_next_word()?;
                 Ok(self.bus.read_byte(word)?)
-            },
+            }
 
             ByteTarget::HL | ByteTarget::HLI | ByteTarget::HLD => {
                 let hl = self.registers.get_hl();
@@ -672,13 +749,13 @@ impl Cpu {
             ByteTarget::Immediate8 => {
                 let word = self.read_next_word()?;
                 self.bus.write_byte(word, value)?;
-            },
+            }
 
             ByteTarget::HL => {
                 let hl = self.registers.get_hl();
                 self.bus.write_byte(hl, value)?;
             }
-            
+
             ByteTarget::HLI => {
                 let hl = self.registers.get_hl();
                 self.registers.set_hl(hl.wrapping_add(1)); // increment HL
@@ -703,25 +780,15 @@ impl Cpu {
     #[inline(always)]
     pub fn get_word_source_value(&self, source: &WordSource) -> Result<u16> {
         match &source {
-            WordSource::Registers(rr) => {
-                Ok(self.get_rr_value(&rr))
-            }
+            WordSource::Registers(rr) => Ok(self.get_rr_value(&rr)),
 
-            WordSource::HL => {
-                Ok(self.registers.get_hl())
-            }
+            WordSource::HL => Ok(self.registers.get_hl()),
 
-            WordSource::Immediate16 => {
-                self.read_next_word()
-            }
+            WordSource::Immediate16 => self.read_next_word(),
 
-            WordSource::SP => {
-                Ok(self.sp)
-            }
+            WordSource::SP => Ok(self.sp),
 
-            WordSource::SpPlusI8 => {
-                Ok(self.sp.wrapping_add(8))
-            }
+            WordSource::SpPlusI8 => Ok(self.sp.wrapping_add(8)),
         }
     }
 
@@ -736,13 +803,9 @@ impl Cpu {
                 Ok(value)
             }
 
-            WordTarget::HL => {
-                Ok(self.registers.get_hl())
-            }
+            WordTarget::HL => Ok(self.registers.get_hl()),
 
-            WordTarget::SP => {
-                Ok(self.sp)
-            }
+            WordTarget::SP => Ok(self.sp),
         }
     }
 
@@ -753,9 +816,9 @@ impl Cpu {
                 let address = self.read_next_word()?;
                 let lsb = (0x00FF & value) as u8;
                 let msb = ((0xFF00 & value) >> 8) as u8;
-                
+
                 self.bus.write_byte(address, lsb)?;
-                self.bus.write_byte(address + 1, msb)?;
+                self.bus.write_byte(address.wrapping_add(1), msb)?;
             }
 
             WordTarget::HL => {
@@ -843,13 +906,13 @@ impl Cpu {
 
     #[inline(always)]
     pub fn read_next_byte(&self) -> Result<u8> {
-        self.bus.read_byte(self.pc + 1)
+        self.bus.read_byte(self.pc.wrapping_add(1))
     }
 
     #[inline(always)]
     pub fn read_next_word(&self) -> Result<u16> {
-        let lsb = self.bus.read_byte(self.pc + 1)? as u16;
-        let msb = self.bus.read_byte(self.pc + 2)? as u16;
+        let lsb = self.bus.read_byte(self.pc.wrapping_add(1))? as u16;
+        let msb = self.bus.read_byte(self.pc.wrapping_add(2))? as u16;
         let next_word = (msb << 8) | lsb;
 
         Ok(next_word)

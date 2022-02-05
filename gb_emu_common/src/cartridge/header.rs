@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::{Result, EmulationError};
 use crate::cartridge::cartridge_type::*;
+use crate::{EmulationError, Result};
 
 #[derive(Clone)]
 pub struct Header {
@@ -14,35 +14,32 @@ pub struct Header {
 impl Header {
     pub fn read_rom_header(rom: &Vec<u8>) -> Result<Header> {
         if rom.len() < 0x014F {
-            return Err(EmulationError::InvalidRom)
+            return Err(EmulationError::InvalidRom);
         }
-        
+
         // check if this is a CGB (gameboy color) ROM
         let cgb_flag = rom[0x143];
         let is_cgb = cgb_flag == 0x80 || cgb_flag == 0xC0;
-    
+
         // the title size is different on CGB
         let title_buffer = if is_cgb {
-            &rom[0x0134 ..= 0x013E]
+            &rom[0x0134..=0x013E]
         } else {
-            &rom[0x0134 ..= 0x0143]
+            &rom[0x0134..=0x0143]
         };
         let title = decode_rom_title(title_buffer);
         let cartridge_type = decode_cartridge_type(rom[0x0147])?;
         let rom_bank_amount = get_amount_of_rom_banks(rom[0x0148])?;
         let ram_bank_amount = get_amount_of_ram_banks(rom[0x0149])?;
-    
-        Ok(
-            Header {
-                title,
-                cartridge_type,
-                rom_bank_amount,
-                ram_bank_amount,
-            }
-        )
-    }    
-}
 
+        Ok(Header {
+            title,
+            cartridge_type,
+            rom_bank_amount,
+            ram_bank_amount,
+        })
+    }
+}
 
 fn decode_rom_title(title_buffer: &[u8]) -> Option<String> {
     match String::from_utf8(title_buffer.to_vec()) {
