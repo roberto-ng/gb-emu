@@ -603,6 +603,149 @@ impl Instruction {
                 ),
             ),
 
+            // JR NC, i8
+            0x30 => Some(
+                Instruction::JR(
+                    JumpTest::NotCarry,
+                    Data::new(2, 8, Some(12), opcode),
+                ),
+            ),
+
+            // LD SP, u16
+            0x31 => Some(
+                Instruction::Ld(
+                    LoadType::Word(
+                        WordTarget::SP,
+                        WordSource::Immediate16,
+                    ),
+                    Data::new(3, 12, None, opcode),
+                )
+            ),
+
+            // LD (HL-), A
+            0x32 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::HLD,
+                        ByteSource::Register(R::A),
+                    ),
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+            // INC SP
+            0x33 => Some(
+                Instruction::Inc16Bits(
+                    WordTarget::SP,
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+
+            // INC (HL)
+            0x34 => Some(
+                Instruction::Inc(
+                    ByteTarget::HL,
+                    Data::new(1, 12, None, opcode),
+                ),
+            ),
+
+            // DEC (HL)
+            0x35 => Some(
+                Instruction::Dec(
+                    ByteTarget::HL,
+                    Data::new(1, 12, None, opcode),
+                )
+            ),
+
+            // LD (HL), u8
+            0x36 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::HL,
+                        ByteSource::Immediate8,
+                    ),
+                    Data::new(2, 12, None, opcode),
+                ),
+            ),
+
+            // SCF
+            0x37 => Some(
+                Instruction::SCF(
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // JR C, i8
+            0x38 => Some(
+                Instruction::JR(
+                    JumpTest::Carry,
+                    Data::new(2, 8, Some(12), opcode),
+                ),
+            ),
+
+            // ADD HL, SP
+            0x39 => Some(
+                Instruction::Add16Bits(
+                    WordSource::SP,
+                    WordTarget::Registers(RR::HL),
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+            // LD A, (HL-)
+            0x3A => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::A),
+                        ByteSource::HLD,
+                    ),
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+            // DEC SP
+            0x3B => Some(
+                Instruction::Dec16Bits(
+                    WordTarget::SP,
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+            // INC A
+            0x3C => Some(
+                Instruction::Inc(
+                    ByteTarget::Register(R::A),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // DEC A
+            0x3D => Some(
+                Instruction::Dec(
+                    ByteTarget::Register(R::A),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD A, u8
+            0x3E => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::A),
+                        ByteSource::Immediate8,
+                    ),
+                    Data::new(2, 2, None, opcode),
+                ),
+            ),
+
+            // CCF
+            0x3F => Some(
+                Instruction::CCF(
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
             // ADD A, B
             0x80 => Some(
                 Instruction::Add(
