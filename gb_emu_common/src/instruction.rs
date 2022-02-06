@@ -172,12 +172,14 @@ impl Instruction {
 
     const fn from_byte_not_prefixed(opcode: u8) -> Option<Instruction> {
         match opcode {
+            // NOP
             0x00 => Some(
                 Instruction::NoOp(
                     Data::new(1, 4, None, opcode)
                 )
             ),
 
+            // LD BC, u16
             0x01 => Some(
                 Instruction::Ld(
                     LoadType::Word(
@@ -188,6 +190,7 @@ impl Instruction {
                 )
             ),
 
+            // LD (BC), A
             0x02 => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -198,6 +201,7 @@ impl Instruction {
                 )
             ),
 
+            // INC BC
             0x03 => Some(
                 Instruction::Inc(
                     ByteTarget::Registers(RR::BC),
@@ -205,6 +209,7 @@ impl Instruction {
                 )
             ),
 
+            // INC B
             0x04 => Some(
                 Instruction::Inc(
                     ByteTarget::Register(R::B),
@@ -212,6 +217,7 @@ impl Instruction {
                 )
             ),
 
+            // DEC B
             0x05 => Some(
                 Instruction::Dec(
                     ByteTarget::Register(R::B),
@@ -219,6 +225,7 @@ impl Instruction {
                 )
             ),
 
+            // LD B, u8
             0x06 => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -229,6 +236,7 @@ impl Instruction {
                 )
             ),
 
+            // RLCA
             0x07 => Some(
                 Instruction::RLC(
                     ByteTarget::Register(R::A),
@@ -236,6 +244,7 @@ impl Instruction {
                 )
             ),
 
+            // LD (u16), SP
             0x08 => Some(
                 Instruction::Ld(
                     LoadType::Word(
@@ -246,6 +255,7 @@ impl Instruction {
                 )
             ),
 
+            // ADD HL, BC
             0x09 => Some(
                 Instruction::Add16Bits(
                     WordSource::Registers(RR::BC),
@@ -254,6 +264,7 @@ impl Instruction {
                 ),
             ),
 
+            // LD A, (BC)
             0x0A => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -264,6 +275,7 @@ impl Instruction {
                 )
             ),
 
+            // DEC BC
             0x0B => Some(
                 Instruction::Dec16Bits(
                     WordTarget::Registers(RR::BC),
@@ -271,6 +283,7 @@ impl Instruction {
                 )
             ),
 
+            // INC C
             0x0C => Some(
                 Instruction::Inc(
                     ByteTarget::Register(R::C),
@@ -278,6 +291,7 @@ impl Instruction {
                 )
             ),
 
+            // DEC C
             0x0D => Some(
                 Instruction::Dec(
                     ByteTarget::Register(R::C),
@@ -285,6 +299,7 @@ impl Instruction {
                 )
             ),
 
+            // LD C, u8
             0x0E => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -295,6 +310,7 @@ impl Instruction {
                 )
             ),
 
+            // RRCA
             0x0F => Some(
                 Instruction::RRC(
                     ByteTarget::Register(R::A),
@@ -302,12 +318,14 @@ impl Instruction {
                 )
             ),
 
+            // STOP
             0x10 => Some(
                 Instruction::Stop(
                     Data::new(1, 4, None, opcode)
                 )
             ),
 
+            // LD DE, u16
             0x11 => Some(
                 Instruction::Ld(
                     LoadType::Word(
@@ -318,6 +336,7 @@ impl Instruction {
                 )
             ),
 
+            // LD (DE),A
             0x12 => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -328,6 +347,7 @@ impl Instruction {
                 )
             ),
 
+            // INC DE
             0x13 => Some(
                 Instruction::Inc16Bits(
                     WordTarget::Registers(RR::DE),
@@ -335,13 +355,15 @@ impl Instruction {
                 )
             ),
 
+            // INC D
             0x14 => Some(
                 Instruction::Inc(
-                    ByteTarget::Registers(RR::HL),
-                    Data::new(1, 12, None, opcode)
+                    ByteTarget::Register(R::D),
+                    Data::new(1, 4, None, opcode)
                 ),
             ),
 
+            // DEC D
             0x15 => Some(
                 Instruction::Dec(
                     ByteTarget::Register(R::D),
@@ -349,6 +371,7 @@ impl Instruction {
                 )
             ),
 
+            // LD D, u8
             0x16 => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -359,6 +382,7 @@ impl Instruction {
                 )
             ),
 
+            // RLA
             0x17 => Some(
                 Instruction::RL(
                     ByteTarget::Register(R::A),
@@ -366,6 +390,7 @@ impl Instruction {
                 )
             ),
 
+            // JR i8
             0x18 => Some(
                 Instruction::JR(
                     JumpTest::Always,
@@ -373,6 +398,7 @@ impl Instruction {
                 ),
             ),
 
+            // ADD HL, DE
             0x19 => Some(
                 Instruction::Add16Bits(
                     WordSource::Registers(RR::DE),
@@ -381,16 +407,18 @@ impl Instruction {
                 )
             ),
 
+            // LD A, (DE)
             0x1A => Some(
                 Instruction::Ld(
                     LoadType::Byte(
                         ByteTarget::Register(R::A),
-                        ByteSource::Registers(RR::BC)
+                        ByteSource::Registers(RR::DE)
                     ),
                     Data::new(1, 8, None, opcode)
                 )
             ),
 
+            // DEC DE
             0x1B => Some(
                 Instruction::Dec16Bits(
                     WordTarget::Registers(RR::DE),
@@ -398,6 +426,7 @@ impl Instruction {
                 )
             ),
 
+            // INC E
             0x1C => Some(
                 Instruction::Inc(
                     ByteTarget::Register(R::E),
@@ -405,6 +434,7 @@ impl Instruction {
                 )
             ),
 
+            // DEC E
             0x1D => Some(
                 Instruction::Dec(
                     ByteTarget::Register(R::E),
@@ -412,6 +442,7 @@ impl Instruction {
                 )
             ),
 
+            // LD E, u8
             0x1E => Some(
                 Instruction::Ld(
                     LoadType::Byte(
@@ -422,6 +453,7 @@ impl Instruction {
                 )
             ),
 
+            // RRA
             0x1F => Some(
                 Instruction::RR(
                     ByteTarget::Register(R::A),
@@ -429,6 +461,7 @@ impl Instruction {
                 )
             ),
 
+            // JR NZ, i8
             0x20 => Some(
                 Instruction::JR(
                     JumpTest::NotZero,
@@ -436,6 +469,7 @@ impl Instruction {
                 )
             ),
 
+            // LD HL, u16
             0x21 => Some(
                 Instruction::Ld(
                     LoadType::Word(
@@ -446,6 +480,7 @@ impl Instruction {
                 )
             ),
 
+            // ADD A, B
             0x80 => Some(
                 Instruction::Add(
                     R::B,
@@ -453,6 +488,7 @@ impl Instruction {
                 )
             ),
             
+            // ADD A, C
             0x81 => Some(
                 Instruction::Add(
                     R::C,
@@ -460,6 +496,7 @@ impl Instruction {
                 )
             ),
             
+            // ADD A, D
             0x82 => Some(
                 Instruction::Add(
                     R::D,
@@ -467,6 +504,7 @@ impl Instruction {
                 )
             ),
             
+            // ADD A, E
             0x83 => Some(
                 Instruction::Add(
                     R::E,
@@ -474,6 +512,7 @@ impl Instruction {
                 )
             ),
             
+            // ADD A, H
             0x84 => Some(
                 Instruction::Add(
                     R::H,
@@ -481,6 +520,7 @@ impl Instruction {
                 )
             ),
             
+            // ADD A, L
             0x85 => Some(
                 Instruction::Add(
                     R::L,
@@ -542,6 +582,7 @@ impl Instruction {
                 )
             ),
 
+            // Unknown opcode
             _ => None,
         }
     }
