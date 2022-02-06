@@ -539,9 +539,9 @@ impl Cpu {
                 let next_instruction = self.pc.wrapping_add(data.bytes);
                 let byte = self.read_next_byte()?;
 
-                if should_jump && byte != 0 {
+                if should_jump {
                     let next_pc = next_instruction.wrapping_add(byte as u16);
-                    (next_pc, data.cycles)
+                    (next_pc, data.get_action_cycles())
                 } else {
                     (next_instruction, data.cycles)
                 }
