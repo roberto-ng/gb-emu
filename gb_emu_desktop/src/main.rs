@@ -155,12 +155,14 @@ fn handle_open_file_btn_click(state: &mut State) {
             .unwrap_or(&rom_path);
         let cartridge_type = header.cartridge_type;
         let file_size = rom.len();
+        let rom_banks = header.rom_bank_amount;
         let description = format!(
             "\
             Title: {rom_title}\n\
             File name: {file_name}\n\
             Cartridge type: {cartridge_type}\n\
-            File size: {file_size} bytes\
+            File size: {file_size} bytes\n\
+            ROM banks: {rom_banks}\
             "
         );
         state.rom_info_description = Some(description);
