@@ -398,7 +398,7 @@ impl Cpu {
             Instruction::SCF(data) => {
                 // Set Carry Flag.
                 self.registers.f.carry = true;
-                
+
                 // Set other flags
                 self.registers.f.subtract = false;
                 self.registers.f.half_carry = false;
