@@ -1098,6 +1098,182 @@ impl Instruction {
                 ),
             ),
 
+            // LD H, B
+            0x60 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::B),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD H, C
+            0x61 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::C),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD H, D
+            0x62 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::D),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD H, E
+            0x63 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::E),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD H, H
+            0x64 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::H),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD H, L
+            0x65 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::L),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD H, (HL)
+            0x66 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::HL,
+                    ),
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+            // LD H, A
+            0x67 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::H),
+                        ByteSource::Register(R::A),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, B
+            0x68 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::B),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, C
+            0x69 => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::C),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, D
+            0x6A => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::D),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, E
+            0x6B => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::E),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, H
+            0x6C => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::H),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, L
+            0x6D => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::L),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
+            // LD L, (HL)
+            0x6E => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::HL,
+                    ),
+                    Data::new(1, 8, None, opcode),
+                ),
+            ),
+
+            // LD L, A
+            0x6F => Some(
+                Instruction::Ld(
+                    LoadType::Byte(
+                        ByteTarget::Register(R::L),
+                        ByteSource::Register(R::A),
+                    ),
+                    Data::new(1, 4, None, opcode),
+                ),
+            ),
+
             // ADD A, B
             0x80 => Some(
                 Instruction::Add(
