@@ -1019,6 +1019,102 @@ impl Instruction {
                 Data::new(1, 4, None, opcode),
             )),
 
+            // SUB A, B
+            0x90 => Some(Instruction::Sub(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SUB A, C
+            0x91 => Some(Instruction::Sub(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SUB A, D
+            0x92 => Some(Instruction::Sub(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SUB A, E
+            0x93 => Some(Instruction::Sub(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SUB A, H
+            0x94 => Some(Instruction::Sub(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SUB A, L
+            0x95 => Some(Instruction::Sub(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SUB A, (HL)
+            0x96 => Some(Instruction::Sub(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // SUB A, A
+            0x97 => Some(Instruction::Sub(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SBC A, B
+            0x98 => Some(Instruction::SbC(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SBC A, C
+            0x99 => Some(Instruction::SbC(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SBC A, D
+            0x9A => Some(Instruction::SbC(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SBC A, E
+            0x9B => Some(Instruction::SbC(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SBC A, H
+            0x9C => Some(Instruction::SbC(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+            
+            // SBC A, L
+            0x9D => Some(Instruction::SbC(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // SBC A, (HL)
+            0x9E => Some(Instruction::SbC(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // SBC A, A
+            0x9F => Some(Instruction::SbC(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
             // JP nz, u16
             0xC2 => Some(Instruction::Jp(
                 JumpTest::NotZero,
