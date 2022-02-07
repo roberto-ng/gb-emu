@@ -1115,6 +1115,102 @@ impl Instruction {
                 Data::new(1, 4, None, opcode),
             )),
 
+            // AND A, B
+            0xA0 => Some(Instruction::And(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // AND A, C
+            0xA1 => Some(Instruction::And(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // AND A, D
+            0xA2 => Some(Instruction::And(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // AND A, E
+            0xA3 => Some(Instruction::And(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // AND A, H
+            0xA4 => Some(Instruction::And(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // AND A, L
+            0xA5 => Some(Instruction::And(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // AND A, (HL)
+            0xA6 => Some(Instruction::And(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // AND A, A
+            0xA7 => Some(Instruction::And(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, B
+            0xA8 => Some(Instruction::XOr(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, C
+            0xA9 => Some(Instruction::XOr(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, D
+            0xAA => Some(Instruction::XOr(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, E
+            0xAB => Some(Instruction::XOr(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, H
+            0xAC => Some(Instruction::XOr(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, L
+            0xAD => Some(Instruction::XOr(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // XOR A, (HL)
+            0xAE => Some(Instruction::XOr(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // XOR A, A
+            0xAF => Some(Instruction::XOr(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
             // JP nz, u16
             0xC2 => Some(Instruction::Jp(
                 JumpTest::NotZero,
