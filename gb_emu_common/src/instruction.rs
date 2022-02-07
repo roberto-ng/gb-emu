@@ -10,7 +10,8 @@ pub struct Data {
 
 #[derive(Copy, Clone, Debug)]
 pub enum Instruction {
-    Add(R, Data),
+    AdC(ByteSource, Data),
+    Add(ByteSource, Data),
     Add16Bits(WordSource, WordTarget, Data),
     And(ByteSource, Data),
     Bit(u8, ByteSource, Data),
@@ -923,22 +924,100 @@ impl Instruction {
             )),
 
             // ADD A, B
-            0x80 => Some(Instruction::Add(R::B, Data::new(1, 4, None, opcode))),
+            0x80 => Some(Instruction::Add(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
 
             // ADD A, C
-            0x81 => Some(Instruction::Add(R::C, Data::new(1, 4, None, opcode))),
+            0x81 => Some(Instruction::Add(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
 
             // ADD A, D
-            0x82 => Some(Instruction::Add(R::D, Data::new(1, 4, None, opcode))),
+            0x82 => Some(Instruction::Add(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
 
             // ADD A, E
-            0x83 => Some(Instruction::Add(R::E, Data::new(1, 4, None, opcode))),
+            0x83 => Some(Instruction::Add(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
 
             // ADD A, H
-            0x84 => Some(Instruction::Add(R::H, Data::new(1, 4, None, opcode))),
+            0x84 => Some(Instruction::Add(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
 
             // ADD A, L
-            0x85 => Some(Instruction::Add(R::L, Data::new(1, 4, None, opcode))),
+            0x85 => Some(Instruction::Add(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADD A, (HL)
+            0x86 => Some(Instruction::Add(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // ADD A, A
+            0x87 => Some(Instruction::Add(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, B
+            0x88 => Some(Instruction::AdC(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, C
+            0x89 => Some(Instruction::AdC(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, D
+            0x8A => Some(Instruction::AdC(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, E
+            0x8B => Some(Instruction::AdC(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, H
+            0x8C => Some(Instruction::AdC(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, L
+            0x8D => Some(Instruction::AdC(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // ADC A, (HL)
+            0x8E => Some(Instruction::AdC(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // ADC A, A
+            0x8F => Some(Instruction::AdC(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
 
             // JP nz, u16
             0xC2 => Some(Instruction::Jp(

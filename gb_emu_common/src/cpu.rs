@@ -68,9 +68,32 @@ impl Cpu {
         }
 
         let result = match &instruction {
-            Instruction::Add(target, data) => {
+            Instruction::AdC(source, data) => {
+                // Add the source value plus the carry flag to A.
                 let a = self.registers.a;
-                let value = self.get_r_value(target); // read register
+                let c =  if self.registers.f.carry { 1 } else { 0 };
+                let value = self.get_byte_source_value(source)?;
+                let (new_value, did_overflow) = a.overflowing_add(value);
+
+                // Set flags
+                self.registers.f.zero = new_value == 0;
+                self.registers.f.subtract = false;
+                self.registers.f.carry = did_overflow;
+
+                // Half Carry is set if adding the lower nibbles of the value and register A
+                // together result in a value bigger than 0xF. If the result is larger than 0xF
+                // than the addition caused a carry from the lower nibble to the upper nibble.
+                self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
+
+                self.registers.a = new_value + c;
+
+                let next_pc = self.pc.wrapping_add(data.bytes);
+                (next_pc, data.cycles)
+            }
+
+            Instruction::Add(source, data) => {
+                let a = self.registers.a;
+                let value = self.get_byte_source_value(source)?;
                 let (new_value, did_overflow) = a.overflowing_add(value);
 
                 // Set flags
