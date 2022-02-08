@@ -719,6 +719,11 @@ impl Cpu {
 
             ByteSource::Immediate8 => self.read_next_byte()?,
 
+            ByteSource::Direct => {
+                let address = self.read_next_word()?;
+                self.bus.read_byte(address)?
+            }
+
             ByteSource::HL => {
                 let hl = self.registers.get_hl();
                 self.bus.read_byte(hl)?
@@ -740,6 +745,12 @@ impl Cpu {
                 let address = 0xFF00 + (self.registers.c as u16);
                 self.bus.read_byte(address)?
             }
+
+            ByteSource::FF00PlusU8 => {
+                let byte = self.read_next_byte()? as u16;
+                let address = 0xFF00 + byte;
+                self.bus.read_byte(address)?
+            }
         };
 
         Ok(byte)
@@ -752,22 +763,33 @@ impl Cpu {
 
             ByteTarget::Registers(rr) => {
                 let word = self.get_rr_value(rr);
-                Ok(self.bus.read_byte(word)?)
+                self.bus.read_byte(word)
             }
 
             ByteTarget::Immediate8 => {
                 let word = self.read_next_word()?;
-                Ok(self.bus.read_byte(word)?)
+                self.bus.read_byte(word)
+            }
+
+            ByteTarget::Direct => {
+                let address = self.read_next_word()?;
+                self.bus.read_byte(address)
             }
 
             ByteTarget::HL | ByteTarget::HLI | ByteTarget::HLD => {
                 let hl = self.registers.get_hl();
-                Ok(self.bus.read_byte(hl)?)
+                self.bus.read_byte(hl)
             }
 
             ByteTarget::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
-                Ok(self.bus.read_byte(address)?)
+                self.bus.read_byte(address)
+            }
+
+            ByteTarget::FF00PlusU8 => {
+                let byte = self.read_next_byte()? as u16;
+                let address = 0xFF00 + byte;
+                self.bus.read_byte(address)
             }
         }
     }
@@ -789,6 +811,11 @@ impl Cpu {
                 self.bus.write_byte(word, value)?;
             }
 
+            ByteTarget::Direct => {
+                let address = self.read_next_word()?;
+                self.bus.write_byte(address, value)?;
+            }
+
             ByteTarget::HL => {
                 let hl = self.registers.get_hl();
                 self.bus.write_byte(hl, value)?;
@@ -808,6 +835,12 @@ impl Cpu {
 
             ByteTarget::FF00PlusC => {
                 let address = 0xFF00 + (self.registers.c as u16);
+                self.bus.write_byte(address, value)?;
+            }
+
+            ByteTarget::FF00PlusU8 => {
+                let byte = self.read_next_byte()? as u16;
+                let address = 0xFF00 + byte;
                 self.bus.write_byte(address, value)?;
             }
         }

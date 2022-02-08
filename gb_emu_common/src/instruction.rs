@@ -90,10 +90,12 @@ pub enum ByteTarget {
     Register(R),
     Registers(RR),
     Immediate8,
+    Direct,
     HL,
     HLI,
     HLD,
     FF00PlusC,
+    FF00PlusU8,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -101,10 +103,12 @@ pub enum ByteSource {
     Register(R),
     Registers(RR),
     Immediate8,
+    Direct,
     HL,
     HLI,
     HLD,
     FF00PlusC,
+    FF00PlusU8,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -1455,12 +1459,60 @@ impl Instruction {
             // RST 18h
             0xDF => Some(Instruction::RST(0x18, Data::new(1, 16, None, opcode))),
 
+            // LD (FF00+u8), A
+            0xE0 => Some(Instruction::Ld(
+                LoadType::Byte(ByteTarget::FF00PlusU8, ByteSource::Register(R::A)),
+                Data::new(2, 12, None, opcode),
+            )),
+
+            // POP HL
+            0xE1 => Some(Instruction::Pop(RR::HL, Data::new(1, 12, None, opcode))),
+
+            // LD (FF00+C), A
+            0xE2 => Some(Instruction::Ld(
+                LoadType::Byte(ByteTarget::FF00PlusC, ByteSource::Register(R::A)),
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // PUSH HL
+            0xE5 => Some(Instruction::Push(RR::HL, Data::new(1, 16, None, opcode))),
+
+            // AND A, u8
+            0xE6 => Some(Instruction::And(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 20h
+            0xE7 => Some(Instruction::RST(0x20, Data::new(1, 16, None, opcode))),
+
+            // ADD SP, i8
+            0xE8 => Some(Instruction::Add(
+                ByteSource::Immediate8,
+                Data::new(2, 16, None, opcode),
+            )),
+
             // JP HL
             0xE9 => Some(Instruction::Jp(
                 JumpTest::Always,
                 WordSource::Registers(RR::HL),
                 Data::new(1, 4, Some(4), opcode),
             )),
+
+            // LD (u16), A
+            0xEA => Some(Instruction::Ld(
+                LoadType::Byte(ByteTarget::Direct, ByteSource::Register(R::A)),
+                Data::new(3, 16, None, opcode),
+            )),
+
+            // XOR A, u8
+            0xEE => Some(Instruction::XOr(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 28h
+            0xEF => Some(Instruction::RST(0x28, Data::new(1, 16, None, opcode))),
 
             // Unknown opcode
             _ => None,
