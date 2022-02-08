@@ -1786,6 +1786,96 @@ impl Instruction {
                 Data::new_cb(2, 8, None, opcode),
             )),
 
+            // SLA C
+            0x21 => Some(Instruction::SLA(
+                ByteTarget::Register(R::C),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SLA D
+            0x22 => Some(Instruction::SLA(
+                ByteTarget::Register(R::D),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SLA E
+            0x23 => Some(Instruction::SLA(
+                ByteTarget::Register(R::E),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SLA H
+            0x24 => Some(Instruction::SLA(
+                ByteTarget::Register(R::H),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SLA L
+            0x25 => Some(Instruction::SLA(
+                ByteTarget::Register(R::L),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SLA (HL)
+            0x26 => Some(Instruction::SLA(
+                ByteTarget::HL,
+                Data::new_cb(2, 16, None, opcode),
+            )),
+
+            // SLA A
+            0x27 => Some(Instruction::SLA(
+                ByteTarget::Register(R::A),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA B
+            0x28 => Some(Instruction::SRA(
+                ByteTarget::Register(R::B),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA C
+            0x29 => Some(Instruction::SRA(
+                ByteTarget::Register(R::C),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA D
+            0x2A => Some(Instruction::SRA(
+                ByteTarget::Register(R::D),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA E
+            0x2B => Some(Instruction::SRA(
+                ByteTarget::Register(R::E),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA H
+            0x2C => Some(Instruction::SRA(
+                ByteTarget::Register(R::H),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA L
+            0x2D => Some(Instruction::SRA(
+                ByteTarget::Register(R::L),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SRA (HL)
+            0x2E => Some(Instruction::SRA(
+                ByteTarget::HL,
+                Data::new_cb(2, 16, None, opcode),
+            )),
+
+            // SRA A
+            0x2F => Some(Instruction::SRA(
+                ByteTarget::Register(R::A),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
             _ => None,
         }
     }
