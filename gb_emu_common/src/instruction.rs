@@ -1591,193 +1591,199 @@ impl Instruction {
             // RLC B
             0x00 => Some(Instruction::RLC(
                 ByteTarget::Register(R::B),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RLC C
             0x01 => Some(Instruction::RLC(
                 ByteTarget::Register(R::C),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RLC D
             0x02 => Some(Instruction::RLC(
                 ByteTarget::Register(R::D),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RLC E
             0x03 => Some(Instruction::RLC(
                 ByteTarget::Register(R::E),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RLC H
             0x04 => Some(Instruction::RLC(
                 ByteTarget::Register(R::H),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RLC L
             0x05 => Some(Instruction::RLC(
                 ByteTarget::Register(R::L),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RLC (HL)
             0x06 => Some(Instruction::RLC(
                 ByteTarget::HL,
-                Data::new(2, 16, None, opcode),
+                Data::new_cb(2, 16, None, opcode),
             )),
 
             // RLC A
             0x07 => Some(Instruction::RLC(
                 ByteTarget::Register(R::A),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC B
             0x08 => Some(Instruction::RRC(
                 ByteTarget::Register(R::B),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC C
             0x09 => Some(Instruction::RRC(
                 ByteTarget::Register(R::C),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC D
             0x0A => Some(Instruction::RRC(
                 ByteTarget::Register(R::D),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC E
             0x0B => Some(Instruction::RRC(
                 ByteTarget::Register(R::E),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC H
             0x0C => Some(Instruction::RRC(
                 ByteTarget::Register(R::H),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC L
             0x0D => Some(Instruction::RRC(
                 ByteTarget::Register(R::L),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RRC (HL)
             0x0E => Some(Instruction::RRC(
                 ByteTarget::HL,
-                Data::new(2, 16, None, opcode),
+                Data::new_cb(2, 16, None, opcode),
             )),
 
             // RRC A
             0x0F => Some(Instruction::RRC(
                 ByteTarget::Register(R::A),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL B
             0x10 => Some(Instruction::RL(
                 ByteTarget::Register(R::B),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL C
             0x11 => Some(Instruction::RL(
                 ByteTarget::Register(R::C),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL D
             0x12 => Some(Instruction::RL(
                 ByteTarget::Register(R::D),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL E
             0x13 => Some(Instruction::RL(
                 ByteTarget::Register(R::E),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL H
             0x14 => Some(Instruction::RL(
                 ByteTarget::Register(R::H),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL L
             0x15 => Some(Instruction::RL(
                 ByteTarget::Register(R::L),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RL (HL)
             0x16 => Some(Instruction::RL(
                 ByteTarget::HL,
-                Data::new(2, 16, None, opcode),
+                Data::new_cb(2, 16, None, opcode),
             )),
 
             // RL A
             0x17 => Some(Instruction::RL(
                 ByteTarget::Register(R::A),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR B
             0x18 => Some(Instruction::RR(
                 ByteTarget::Register(R::B),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR C
             0x19 => Some(Instruction::RR(
                 ByteTarget::Register(R::C),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR D
             0x1A => Some(Instruction::RR(
                 ByteTarget::Register(R::D),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR E
             0x1B => Some(Instruction::RR(
                 ByteTarget::Register(R::E),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR H
             0x1C => Some(Instruction::RR(
                 ByteTarget::Register(R::H),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR L
             0x1D => Some(Instruction::RR(
                 ByteTarget::Register(R::L),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             // RR (HL)
             0x1E => Some(Instruction::RR(
                 ByteTarget::HL,
-                Data::new(2, 16, None, opcode),
+                Data::new_cb(2, 16, None, opcode),
             )),
 
             // RR A
             0x1F => Some(Instruction::RR(
                 ByteTarget::Register(R::A),
-                Data::new(2, 8, None, opcode),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // SLA B
+            0x20 => Some(Instruction::SLA(
+                ByteTarget::Register(R::B),
+                Data::new_cb(2, 8, None, opcode),
             )),
 
             _ => None,
