@@ -1514,6 +1514,66 @@ impl Instruction {
             // RST 28h
             0xEF => Some(Instruction::RST(0x28, Data::new(1, 16, None, opcode))),
 
+            // LD A, (FF00+u8)
+            0xF0 => Some(Instruction::Ld(
+                LoadType::Byte(ByteTarget::Register(R::A), ByteSource::FF00PlusU8),
+                Data::new(2, 12, None, opcode),
+            )),
+
+            // POP AF
+            0xF1 => Some(Instruction::Pop(RR::AF, Data::new(1, 12, None, opcode))),
+
+            // LD A, (FF00+C)
+            0xF2 => Some(Instruction::Ld(
+                LoadType::Byte(ByteTarget::Register(R::A), ByteSource::FF00PlusC),
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // DI
+            0xF3 => Some(Instruction::DI(Data::new(1, 4, None, opcode))),
+
+            // PUSH AF
+            0xF5 => Some(Instruction::Push(RR::AF, Data::new(1, 16, None, opcode))),
+
+            // OR A, u8
+            0xF6 => Some(Instruction::Or(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 30h
+            0xF7 => Some(Instruction::RST(0x30, Data::new(1, 16, None, opcode))),
+
+            // LD HL, SP+i8
+            0xF8 => Some(Instruction::Ld(
+                LoadType::Word(WordTarget::Registers(RR::HL), WordSource::SpPlusI8),
+                Data::new(2, 12, None, opcode),
+            )),
+
+            // LD SP,HL
+            0xF9 => Some(Instruction::Ld(
+                LoadType::Word(WordTarget::SP, WordSource::Registers(RR::HL)),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // LD A, (u16)
+            0xFA => Some(Instruction::Ld(
+                LoadType::Byte(ByteTarget::Register(R::A), ByteSource::Direct),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // EI
+            0xFB => Some(Instruction::EI(Data::new(1, 4, None, opcode))),
+
+            // CP A, u8
+            0xFE => Some(Instruction::Cp(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 38h
+            0xFF => Some(Instruction::RST(0x38, Data::new(1, 16, None, opcode))),
+
             // Unknown opcode
             _ => None,
         }
