@@ -1876,6 +1876,102 @@ impl Instruction {
                 Data::new_cb(2, 8, None, opcode),
             )),
 
+            // SWAP B
+            0x30 => Some(Instruction::Swap(
+                ByteTarget::Register(R::B),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SWAP C
+            0x31 => Some(Instruction::Swap(
+                ByteTarget::Register(R::C),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SWAP D
+            0x32 => Some(Instruction::Swap(
+                ByteTarget::Register(R::D),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SWAP E
+            0x33 => Some(Instruction::Swap(
+                ByteTarget::Register(R::E),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SWAP H
+            0x34 => Some(Instruction::Swap(
+                ByteTarget::Register(R::H),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SWAP L
+            0x35 => Some(Instruction::Swap(
+                ByteTarget::Register(R::L),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SWAP (HL)
+            0x36 => Some(Instruction::Swap(
+                ByteTarget::HL,
+                Data::new(2, 16, None, opcode),
+            )),
+
+            // SWAP A
+            0x37 => Some(Instruction::Swap(
+                ByteTarget::Register(R::A),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL B
+            0x38 => Some(Instruction::SRL(
+                ByteTarget::Register(R::B),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL C
+            0x39 => Some(Instruction::SRL(
+                ByteTarget::Register(R::C),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL D
+            0x3A => Some(Instruction::SRL(
+                ByteTarget::Register(R::D),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL E
+            0x3B => Some(Instruction::SRL(
+                ByteTarget::Register(R::E),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL H
+            0x3C => Some(Instruction::SRL(
+                ByteTarget::Register(R::H),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL L
+            0x3D => Some(Instruction::SRL(
+                ByteTarget::Register(R::L),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SRL (HL)
+            0x3E => Some(Instruction::SRL(
+                ByteTarget::HL,
+                Data::new(2, 16, None, opcode),
+            )),
+
+            // SRL A
+            0x3F => Some(Instruction::SRL(
+                ByteTarget::Register(R::A),
+                Data::new(2, 8, None, opcode),
+            )),
+
             _ => None,
         }
     }
