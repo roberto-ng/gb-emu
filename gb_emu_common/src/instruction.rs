@@ -1390,6 +1390,15 @@ impl Instruction {
             // RST 08h
             0xCF => Some(Instruction::RST(0x08, Data::new(1, 16, None, opcode))),
 
+            // RET NC
+            0xD0 => Some(Instruction::Ret(
+                JumpTest::NotCarry,
+                Data::new(1, 8, Some(20), opcode),
+            )),
+
+            // POP DE
+            0xD1 => Some(Instruction::Pop(RR::DE, Data::new(1, 12, None, opcode))),
+
             // JP nc, n16
             0xD2 => Some(Instruction::Jp(
                 JumpTest::NotCarry,
@@ -1397,12 +1406,54 @@ impl Instruction {
                 Data::new(3, 12, Some(16), opcode),
             )),
 
-            // JP cc, n16
+            // CALL NC, u16
+            0xD4 => Some(Instruction::Call(
+                JumpTest::NotCarry,
+                Data::new(3, 12, Some(24), opcode),
+            )),
+
+            // PUSH DE
+            0xD5 => Some(Instruction::Push(RR::DE, Data::new(1, 16, None, opcode))),
+
+            // SUB A, u8
+            0xD6 => Some(Instruction::Sub(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 10h
+            0xD7 => Some(Instruction::RST(0x10, Data::new(1, 16, None, opcode))),
+
+            // RET C
+            0xD8 => Some(Instruction::Ret(
+                JumpTest::Carry,
+                Data::new(1, 8, Some(20), opcode),
+            )),
+
+            // RETI
+            0xD9 => Some(Instruction::RetI(Data::new(1, 16, None, opcode))),
+
+            // JP C, u16
             0xDA => Some(Instruction::Jp(
                 JumpTest::Carry,
                 WordSource::Immediate16,
                 Data::new(3, 12, Some(16), opcode),
             )),
+
+            // CALL C, u16
+            0xDC => Some(Instruction::Call(
+                JumpTest::Carry,
+                Data::new(3, 12, Some(24), opcode),
+            )),
+
+            // SBC A, u8
+            0xDE => Some(Instruction::SbC(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 18h
+            0xDF => Some(Instruction::RST(0x18, Data::new(1, 16, None, opcode))),
 
             // JP HL
             0xE9 => Some(Instruction::Jp(
