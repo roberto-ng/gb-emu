@@ -1307,6 +1307,15 @@ impl Instruction {
                 Data::new(1, 4, None, opcode),
             )),
 
+            // RET NZ
+            0xC0 => Some(Instruction::Ret(
+                JumpTest::NotZero,
+                Data::new(1, 8, Some(20), opcode),
+            )),
+
+            // POP BC
+            0xC1 => Some(Instruction::Pop(RR::BC, Data::new(1, 12, None, opcode))),
+
             // JP nz, u16
             0xC2 => Some(Instruction::Jp(
                 JumpTest::NotZero,
@@ -1321,12 +1330,65 @@ impl Instruction {
                 Data::new(3, 16, Some(16), opcode),
             )),
 
+            // CALL NZ, u16
+            0xC4 => Some(Instruction::Call(
+                JumpTest::NotZero,
+                Data::new(3, 12, Some(24), opcode),
+            )),
+
+            // PUSH BC
+            0xC5 => Some(Instruction::Push(RR::BC, Data::new(1, 16, None, opcode))),
+
+            // ADD A, u8
+            0xC6 => Some(Instruction::Add(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 00h
+            0xC7 => Some(Instruction::RST(0x00, Data::new(1, 16, None, opcode))),
+
+            // RET Z
+            0xC8 => Some(Instruction::Ret(
+                JumpTest::Zero,
+                Data::new(1, 8, Some(20), opcode),
+            )),
+
+            // RET
+            0xC9 => Some(Instruction::Ret(
+                JumpTest::Always,
+                Data::new(1, 16, Some(16), opcode),
+            )),
+
             // JP z, n16
             0xCA => Some(Instruction::Jp(
                 JumpTest::Zero,
                 WordSource::Immediate16,
                 Data::new(3, 12, Some(16), opcode),
             )),
+
+            // 0xCB is used as a prefix for other instructions, so let's skip it.
+
+            // CALL Z, u16
+            0xCC => Some(Instruction::Call(
+                JumpTest::Zero,
+                Data::new(3, 12, Some(24), opcode),
+            )),
+
+            // CALL u16
+            0xCD => Some(Instruction::Call(
+                JumpTest::Always,
+                Data::new(3, 24, Some(24), opcode),
+            )),
+
+            // ADC A, u8
+            0xCE => Some(Instruction::AdC(
+                ByteSource::Immediate8,
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RST 08h
+            0xCF => Some(Instruction::RST(0x08, Data::new(1, 16, None, opcode))),
 
             // JP nc, n16
             0xD2 => Some(Instruction::Jp(
