@@ -71,7 +71,7 @@ impl Cpu {
             Instruction::AdC(source, data) => {
                 // Add the source value plus the carry flag to A.
                 let a = self.registers.a;
-                let c =  if self.registers.f.carry { 1 } else { 0 };
+                let c = if self.registers.f.carry { 1 } else { 0 };
                 let value = self.get_byte_source_value(source)?;
                 let (new_value, did_overflow) = a.overflowing_add(value);
 

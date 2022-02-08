@@ -1096,7 +1096,7 @@ impl Instruction {
                 ByteSource::Register(R::H),
                 Data::new(1, 4, None, opcode),
             )),
-            
+
             // SBC A, L
             0x9D => Some(Instruction::SbC(
                 ByteSource::Register(R::L),
@@ -1207,6 +1207,102 @@ impl Instruction {
 
             // XOR A, A
             0xAF => Some(Instruction::XOr(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, B
+            0xB0 => Some(Instruction::Or(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, C
+            0xB1 => Some(Instruction::Or(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, D
+            0xB2 => Some(Instruction::Or(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, E
+            0xB3 => Some(Instruction::Or(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, H
+            0xB4 => Some(Instruction::Or(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, L
+            0xB5 => Some(Instruction::Or(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // OR A, (HL)
+            0xB6 => Some(Instruction::Or(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // OR A, A
+            0xB7 => Some(Instruction::Or(
+                ByteSource::Register(R::A),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, B
+            0xB8 => Some(Instruction::Cp(
+                ByteSource::Register(R::B),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, C
+            0xB9 => Some(Instruction::Cp(
+                ByteSource::Register(R::C),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, D
+            0xBA => Some(Instruction::Cp(
+                ByteSource::Register(R::D),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, E
+            0xBB => Some(Instruction::Cp(
+                ByteSource::Register(R::E),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, H
+            0xBC => Some(Instruction::Cp(
+                ByteSource::Register(R::H),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, L
+            0xBD => Some(Instruction::Cp(
+                ByteSource::Register(R::L),
+                Data::new(1, 4, None, opcode),
+            )),
+
+            // CP A, (HL)
+            0xBE => Some(Instruction::Cp(
+                ByteSource::HL,
+                Data::new(1, 8, None, opcode),
+            )),
+
+            // CP A, A
+            0xBF => Some(Instruction::Cp(
                 ByteSource::Register(R::A),
                 Data::new(1, 4, None, opcode),
             )),
