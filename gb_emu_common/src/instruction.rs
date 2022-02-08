@@ -143,6 +143,17 @@ impl Data {
         }
     }
 
+    // new 0xCB prefixed instruction
+    pub const fn new_cb(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
+        Data {
+            bytes,
+            cycles,
+            action_cycles,
+            opcode,
+            is_prefixed: true,
+        }
+    }
+
     pub fn get_action_cycles(&self) -> u8 {
         match self.action_cycles {
             Some(action_cycles) => action_cycles,
@@ -164,14 +175,10 @@ impl Data {
 impl Instruction {
     pub const fn from_byte(byte: u8, prefixed: bool) -> Option<Instruction> {
         if prefixed {
-            Instruction::from_byte_prefixed(byte)
+            Instruction::from_byte_0xcb_prefixed(byte)
         } else {
             Instruction::from_byte_not_prefixed(byte)
         }
-    }
-
-    const fn from_byte_prefixed(_byte: u8) -> Option<Instruction> {
-        None
     }
 
     const fn from_byte_not_prefixed(opcode: u8) -> Option<Instruction> {
@@ -1575,6 +1582,108 @@ impl Instruction {
             0xFF => Some(Instruction::RST(0x38, Data::new(1, 16, None, opcode))),
 
             // Unknown opcode
+            _ => None,
+        }
+    }
+
+    const fn from_byte_0xcb_prefixed(opcode: u8) -> Option<Instruction> {
+        match opcode {
+            // RLC B
+            0x00 => Some(Instruction::RLC(
+                ByteTarget::Register(R::B),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RLC C
+            0x01 => Some(Instruction::RLC(
+                ByteTarget::Register(R::C),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RLC D
+            0x02 => Some(Instruction::RLC(
+                ByteTarget::Register(R::D),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RLC E
+            0x03 => Some(Instruction::RLC(
+                ByteTarget::Register(R::E),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RLC H
+            0x04 => Some(Instruction::RLC(
+                ByteTarget::Register(R::H),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RLC L
+            0x05 => Some(Instruction::RLC(
+                ByteTarget::Register(R::L),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RLC (HL)
+            0x06 => Some(Instruction::RLC(
+                ByteTarget::HL,
+                Data::new(2, 16, None, opcode),
+            )),
+
+            // RLC A
+            0x07 => Some(Instruction::RLC(
+                ByteTarget::Register(R::A),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC B
+            0x08 => Some(Instruction::RRC(
+                ByteTarget::Register(R::B),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC C
+            0x09 => Some(Instruction::RRC(
+                ByteTarget::Register(R::C),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC D
+            0x0A => Some(Instruction::RRC(
+                ByteTarget::Register(R::D),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC E
+            0x0B => Some(Instruction::RRC(
+                ByteTarget::Register(R::E),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC H
+            0x0C => Some(Instruction::RRC(
+                ByteTarget::Register(R::H),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC L
+            0x0D => Some(Instruction::RRC(
+                ByteTarget::Register(R::L),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // RRC (HL)
+            0x0E => Some(Instruction::RRC(
+                ByteTarget::HL,
+                Data::new(2, 16, None, opcode),
+            )),
+
+            // RRC A
+            0x0F => Some(Instruction::RRC(
+                ByteTarget::Register(R::A),
+                Data::new(2, 8, None, opcode),
+            )),
+
             _ => None,
         }
     }
