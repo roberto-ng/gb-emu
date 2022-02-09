@@ -2308,6 +2308,118 @@ impl Instruction {
                 Data::new_cb(2, 8, None, opcode),
             )),
 
+            // BIT 6, B
+            0x70 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::B),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 6, C
+            0x71 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::C),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 6, D
+            0x72 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::D),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 6, E
+            0x73 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::E),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 6, H
+            0x74 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::H),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 6, L
+            0x75 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::L),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 6, (HL)
+            0x76 => Some(Instruction::Bit(
+                6,
+                ByteSource::HL,
+                Data::new_cb(2, 12, None, opcode),
+            )),
+
+            // BIT 6, A
+            0x77 => Some(Instruction::Bit(
+                6,
+                ByteSource::Register(R::A),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, B
+            0x78 => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::B),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, C
+            0x79 => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::C),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, D
+            0x7A => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::D),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, E
+            0x7B => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::E),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, H
+            0x7C => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::H),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, L
+            0x7D => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::L),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // BIT 7, (HL)
+            0x7E => Some(Instruction::Bit(
+                7,
+                ByteSource::HL,
+                Data::new_cb(2, 12, None, opcode),
+            )),
+
+            // BIT 7, A
+            0x7F => Some(Instruction::Bit(
+                7,
+                ByteSource::Register(R::A),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
             _ => None,
         }
     }
