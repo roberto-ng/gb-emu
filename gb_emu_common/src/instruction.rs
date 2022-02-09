@@ -2644,6 +2644,118 @@ impl Instruction {
                 Data::new_cb(2, 8, None, opcode),
             )),
 
+            // RES 4, B
+            0xA0 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::B),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 4, C
+            0xA1 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::C),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 4, D
+            0xA2 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::D),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 4, E
+            0xA3 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::E),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 4, H
+            0xA4 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::H),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 4, L
+            0xA5 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::L),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 4, (HL)
+            0xA6 => Some(Instruction::Res(
+                4,
+                ByteTarget::HL,
+                Data::new_cb(2, 16, None, opcode),
+            )),
+
+            // RES 4, A
+            0xA7 => Some(Instruction::Res(
+                4,
+                ByteTarget::Register(R::A),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, B
+            0xA8 => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::B),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, C
+            0xA9 => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::C),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, D
+            0xAA => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::D),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, E
+            0xAB => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::E),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, H
+            0xAC => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::H),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, L
+            0xAD => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::L),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
+            // RES 5, (HL)
+            0xAE => Some(Instruction::Res(
+                5,
+                ByteTarget::HL,
+                Data::new_cb(2, 16, None, opcode),
+            )),
+
+            // RES 5, A
+            0xAF => Some(Instruction::Res(
+                5,
+                ByteTarget::Register(R::A),
+                Data::new_cb(2, 8, None, opcode),
+            )),
+
             _ => None,
         }
     }
