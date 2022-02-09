@@ -2868,6 +2868,118 @@ impl Instruction {
                 Data::new_cb(2, 8, None, opcode),
             )),
 
+            // SET 0, B
+            0xC0 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::B),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 0, C
+            0xC1 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::C),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 0, D
+            0xC2 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::D),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 0, E
+            0xC3 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::E),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 0, H
+            0xC4 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::H),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 0, L
+            0xC5 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::L),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 0, (HL)
+            0xC6 => Some(Instruction::Set(
+                0,
+                ByteTarget::HL,
+                Data::new(2, 16, None, opcode),
+            )),
+
+            // SET 0, A
+            0xC7 => Some(Instruction::Set(
+                0,
+                ByteTarget::Register(R::A),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, B
+            0xC8 => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::B),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, C
+            0xC9 => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::C),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, D
+            0xCA => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::D),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, E
+            0xCB => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::E),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, H
+            0xCC => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::H),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, L
+            0xCD => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::L),
+                Data::new(2, 8, None, opcode),
+            )),
+
+            // SET 1, (HL)
+            0xCE => Some(Instruction::Set(
+                1,
+                ByteTarget::HL,
+                Data::new(2, 16, None, opcode),
+            )),
+
+            // SET 1, A
+            0xCF => Some(Instruction::Set(
+                1,
+                ByteTarget::Register(R::A),
+                Data::new(2, 8, None, opcode),
+            )),
+
             _ => None,
         }
     }
