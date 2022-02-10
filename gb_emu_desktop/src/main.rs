@@ -4,8 +4,10 @@ use config::*;
 use directories::UserDirs;
 use gb_emu_common::cartridge::header::Header;
 use macroquad::prelude::*;
-use native_dialog::FileDialog;
 use std::path::{Path, PathBuf};
+
+#[cfg(not(target_family = "wasm"))]
+use native_dialog::FileDialog;
 
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
@@ -66,10 +68,12 @@ async fn main() {
                                 handle_open_file_btn_click(&mut state);
                                 ui.close_menu();
                             }
-
-                            if ui.button("Quit").clicked() {
-                                state.quit = true;
-                                ui.close_menu();
+                            
+                            if cfg!(not(target_family = "wasm")) {
+                                if ui.button("Quit").clicked() {
+                                    state.quit = true;
+                                    ui.close_menu();
+                                }
                             }
                         });
                     });
@@ -118,6 +122,10 @@ async fn main() {
     }
 }
 
+#[cfg(target_family = "wasm")]
+fn handle_open_file_btn_click(_state: &mut State) {}
+
+#[cfg(not(target_family = "wasm"))]
 fn handle_open_file_btn_click(state: &mut State) {
     let last_folder_path = state
         .last_used_dir
@@ -185,6 +193,7 @@ fn scale_image(src_width: f32, src_height: f32, max_width: f32, max_height: f32)
     }
 }
 
+#[cfg(not(target_family = "wasm"))]
 fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dialog::Error> {
     let home_path = match UserDirs::new() {
         Some(user_dirs) => user_dirs.home_dir().to_owned(),
