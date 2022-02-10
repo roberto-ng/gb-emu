@@ -3315,8 +3315,6 @@ impl Instruction {
                 ByteTarget::Register(R::A),
                 Data::new_cb(2, 8, None, opcode),
             )),
-
-            _ => None,
         }
     }
 }
