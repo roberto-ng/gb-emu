@@ -1,11 +1,13 @@
 mod config;
 
 use config::*;
-use directories::UserDirs;
 use gb_emu_common::cartridge::header::Header;
+use gilrs::{Event, Gilrs};
 use macroquad::prelude::*;
 use std::path::{Path, PathBuf};
 
+#[cfg(not(target_family = "wasm"))]
+use directories::UserDirs;
 #[cfg(not(target_family = "wasm"))]
 use native_dialog::FileDialog;
 
@@ -19,6 +21,7 @@ struct State {
     pub show_rom_info_window: bool,
     pub rom_info_description: Option<String>,
     pub last_used_dir: Option<String>,
+    pub last_gamepad_event: Option<String>,
 }
 
 impl State {
@@ -30,6 +33,7 @@ impl State {
             show_rom_info_window: false,
             rom_info_description: None,
             last_used_dir,
+            last_gamepad_event: None,
         }
     }
 }
@@ -44,6 +48,7 @@ fn conf() -> Conf {
 
 #[macroquad::main(conf)]
 async fn main() {
+    let mut gilrs = Gilrs::new().unwrap();
     let mut state = State::new();
 
     loop {
@@ -53,10 +58,17 @@ async fn main() {
             break;
         }
 
-        // process keys, mouse etc.
+        // Process keys, mouse etc.
 
         if is_key_pressed(KeyCode::F11) {
             state.show_menu_bar = !state.show_menu_bar;
+        }
+
+        // Gamepad events
+        while let Some(Event { id, event, time }) = gilrs.next_event() {
+            let event_description = format!("{:?} New event from {}: {:?}", time, id, event);
+            state.last_gamepad_event = Some(event_description);
+            //active_gamepad = Some(id);
         }
 
         egui_macroquad::ui(|ctx| {
@@ -68,7 +80,7 @@ async fn main() {
                                 handle_open_file_btn_click(&mut state);
                                 ui.close_menu();
                             }
-                            
+
                             if cfg!(not(target_family = "wasm")) {
                                 if ui.button("Quit").clicked() {
                                     state.quit = true;
@@ -86,6 +98,12 @@ async fn main() {
                     .show(&ctx, |ui| {
                         ui.label(description);
                     });
+            }
+
+            if let Some(event) = &state.last_gamepad_event {
+                egui::Window::new("Gamepad event").show(ctx, |ui| {
+                    ui.label(event);
+                });
             }
         });
 

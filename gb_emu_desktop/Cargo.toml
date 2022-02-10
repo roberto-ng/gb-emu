@@ -8,6 +8,7 @@ gb_emu_common = { version = "*", path = "../gb_emu_common" }
 macroquad = { version = "0.3.6", default-features = false }
 egui-macroquad = "0.8.0"
 egui = "0.16.0"
+gilrs = { version = "0.8.2", features = ["wasm-bindgen"] }
 
 # Dependencies that aren't needed for the WASM version
 [target.'cfg(not(target_family = "wasm"))'.dependencies] 

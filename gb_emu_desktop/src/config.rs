@@ -1,7 +1,9 @@
-use directories::BaseDirs;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
+
+#[cfg(not(target_family = "wasm"))]
+use directories::BaseDirs;
 
 pub enum ConfigFile {
     LastUsedDirectory,
@@ -15,6 +17,7 @@ impl ConfigFile {
     }
 }
 
+#[cfg(not(target_family = "wasm"))]
 pub fn save_config(config_file: ConfigFile, content: &str) -> std::io::Result<()> {
     if let Some(dirs) = BaseDirs::new() {
         let config_path = dirs.config_dir();
@@ -32,6 +35,12 @@ pub fn save_config(config_file: ConfigFile, content: &str) -> std::io::Result<()
     Ok(())
 }
 
+#[cfg(target_family = "wasm")]
+pub fn read_config(config_file: ConfigFile) -> std::io::Result<Option<String>> {
+    Ok(None)
+}
+
+#[cfg(not(target_family = "wasm"))]
 pub fn read_config(config_file: ConfigFile) -> std::io::Result<Option<String>> {
     if let Some(dirs) = BaseDirs::new() {
         let config_path = dirs.config_dir();
