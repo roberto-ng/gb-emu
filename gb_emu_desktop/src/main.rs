@@ -20,6 +20,13 @@ use wasm_bindgen::JsCast;
 #[cfg(target_family = "wasm")]
 use web_sys::{Event, FileReader, HtmlInputElement};
 
+
+#[cfg(target_family = "wasm")]
+extern "C" {
+    fn js_open_file();
+    fn js_open_fullscreen();
+}
+
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
 const MENU_BAR_HEIGHT: f32 = 23.;
@@ -29,6 +36,7 @@ static WASM_ROM: Lazy<Mutex<Option<Vec<u8>>>> = Lazy::new(|| Mutex::new(None));
 struct State {
     pub quit: bool,
     pub show_menu_bar: bool,
+    pub is_fullscreen: bool,
     pub show_rom_info_window: bool,
     pub rom_info_description: Option<String>,
     pub is_waiting_file_callback: bool,
@@ -42,6 +50,7 @@ impl State {
         State {
             quit: false,
             show_menu_bar: true,
+            is_fullscreen: false,
             show_rom_info_window: false,
             rom_info_description: None,
             is_waiting_file_callback: false,
@@ -98,8 +107,17 @@ async fn main() {
 
         // Process keys, mouse etc.
 
-        if is_key_pressed(KeyCode::F11) {
+        if is_key_pressed(KeyCode::RightAlt) {
             state.show_menu_bar = !state.show_menu_bar;
+        }
+
+        if is_key_pressed(KeyCode::Escape) {
+            state.show_menu_bar = true;
+        }
+
+        if is_key_pressed(KeyCode::F11) {
+            state.show_menu_bar = false;
+            open_fullscreen();
         }
 
         // Gamepad events
@@ -126,6 +144,16 @@ async fn main() {
                                 }
                             }
                         });
+                        
+                        if cfg!(target_family = "wasm") {
+                            ui.menu_button("View", |ui| {
+                                if ui.button("Fullscreen").clicked() {
+                                    open_fullscreen();
+                                    state.show_menu_bar = false;
+                                    ui.close_menu();
+                                }
+                            });
+                        }
                     });
                 });
             }
@@ -149,9 +177,9 @@ async fn main() {
 
         let menu_bar_end = MENU_BAR_HEIGHT + 1.0;
         let screen_height = if state.show_menu_bar {
-            screen_height()
-        } else {
             screen_height() - menu_bar_end
+        } else {
+            screen_height()
         };
         let screen_width = screen_width();
 
@@ -164,9 +192,9 @@ async fn main() {
         let x = (screen_width - w) / 2.0;
         let y = (screen_height - h) / 2.0;
         let offset_y = if state.show_menu_bar {
-            0.0
-        } else {
             menu_bar_end
+        } else {
+            0.0
         };
         // draw gb screen
         draw_rectangle(x, y + offset_y, w, h, WHITE);
@@ -176,11 +204,6 @@ async fn main() {
 
         next_frame().await;
     }
-}
-
-#[cfg(target_family = "wasm")]
-extern "C" {
-    fn js_open_file();
 }
 
 #[cfg(target_family = "wasm")]
@@ -251,6 +274,16 @@ fn handle_open_file_btn_click(state: &mut State) {
         state.show_rom_info_window = true // Show ROM information window
     }
 }
+
+#[cfg(target_family = "wasm")]
+fn open_fullscreen() {
+    unsafe {
+        js_open_fullscreen();
+    }
+}
+
+#[cfg(not(target_family = "wasm"))]
+fn open_fullscreen() {}
 
 fn scale_image(src_width: f32, src_height: f32, max_width: f32, max_height: f32) -> (f32, f32) {
     let ratio_w = max_width / src_width;

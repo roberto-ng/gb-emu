@@ -40,6 +40,17 @@
                 reader.readAsArrayBuffer(file);
             }
 
+            function openFullscreen() {
+                const canvas = document.querySelector('canvas#glcanvas');
+                if (canvas.requestFullscreen) {
+                    canvas.requestFullscreen();
+                } else if (canvas.webkitRequestFullscreen) { /* Safari */
+                    canvas.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                    canvas.msRequestFullscreen();
+                }
+            }
+
             async function run() {
                 let wbg = await init();
 
@@ -65,6 +76,10 @@
                                 openFile(input.files[0]);
                             });
                             input.click();
+                        };
+
+                        importObject.env.js_open_fullscreen = (js_object) => {
+                            openFullscreen();
                         };
                     },
                 });
