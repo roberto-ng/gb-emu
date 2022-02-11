@@ -2,24 +2,36 @@ mod config;
 
 use config::*;
 use gb_emu_common::cartridge::header::Header;
-use gilrs::{Event, Gilrs};
+use gilrs::{Event as GamepadEvent, Gilrs};
 use macroquad::prelude::*;
+use once_cell::sync::Lazy;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 #[cfg(not(target_family = "wasm"))]
 use directories::UserDirs;
 #[cfg(not(target_family = "wasm"))]
 use native_dialog::FileDialog;
 
+#[cfg(target_family = "wasm")]
+use wasm_bindgen::prelude::*;
+#[cfg(target_family = "wasm")]
+use wasm_bindgen::JsCast;
+#[cfg(target_family = "wasm")]
+use web_sys::{Event, FileReader, HtmlInputElement};
+
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
 const MENU_BAR_HEIGHT: f32 = 23.;
+
+static WASM_ROM: Lazy<Mutex<Option<Vec<u8>>>> = Lazy::new(|| Mutex::new(None));
 
 struct State {
     pub quit: bool,
     pub show_menu_bar: bool,
     pub show_rom_info_window: bool,
     pub rom_info_description: Option<String>,
+    pub is_waiting_file_callback: bool,
     pub last_used_dir: Option<String>,
     pub last_gamepad_event: Option<String>,
 }
@@ -32,6 +44,7 @@ impl State {
             show_menu_bar: true,
             show_rom_info_window: false,
             rom_info_description: None,
+            is_waiting_file_callback: false,
             last_used_dir,
             last_gamepad_event: None,
         }
@@ -58,6 +71,31 @@ async fn main() {
             break;
         }
 
+        // This is a hack used to load files on WASM
+        if state.is_waiting_file_callback {
+            let mut mutex = WASM_ROM.lock().unwrap();
+            if let Some(rom) = mutex.as_ref() {
+                let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
+                let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
+                let cartridge_type = header.cartridge_type;
+                let file_size = rom.len();
+                let rom_banks = header.rom_bank_amount;
+                let description = format!(
+                    "\
+                    Title: {rom_title}\n\
+                    Cartridge type: {cartridge_type}\n\
+                    File size: {file_size} bytes\n\
+                    ROM banks: {rom_banks}\
+                    "
+                );
+
+                state.rom_info_description = Some(description);
+                state.show_rom_info_window = true;
+                state.is_waiting_file_callback = false;
+                *mutex = None;
+            }
+        }
+
         // Process keys, mouse etc.
 
         if is_key_pressed(KeyCode::F11) {
@@ -65,7 +103,7 @@ async fn main() {
         }
 
         // Gamepad events
-        while let Some(Event { id, event, time }) = gilrs.next_event() {
+        while let Some(GamepadEvent { id, event, time }) = gilrs.next_event() {
             let event_description = format!("{:?} New event from {}: {:?}", time, id, event);
             state.last_gamepad_event = Some(event_description);
             //active_gamepad = Some(id);
@@ -141,7 +179,25 @@ async fn main() {
 }
 
 #[cfg(target_family = "wasm")]
-fn handle_open_file_btn_click(_state: &mut State) {}
+extern "C" {
+    fn js_open_file();
+}
+
+#[cfg(target_family = "wasm")]
+fn handle_open_file_btn_click(state: &mut State) {
+    unsafe {
+        js_open_file();
+    }
+
+    state.is_waiting_file_callback = true;
+}
+
+#[cfg(target_family = "wasm")]
+#[wasm_bindgen]
+pub fn js_open_file_callback(buffer: js_sys::Uint8Array) {
+    let rom = buffer.to_vec();
+    *WASM_ROM.lock().unwrap() = Some(rom);
+}
 
 #[cfg(not(target_family = "wasm"))]
 fn handle_open_file_btn_click(state: &mut State) {
