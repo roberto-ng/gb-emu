@@ -1,4 +1,6 @@
 mod config;
+#[cfg(target_family = "wasm")]
+mod wasm;
 
 use config::*;
 use gb_emu_common::cartridge::header::Header;
@@ -69,20 +71,27 @@ fn conf() -> Conf {
     }
 }
 
-enum FullscreenEvent {
+pub enum FullscreenEvent {
     Enter,
     Leave,
     None,
 }
 
-struct WebEvents {
+pub enum FileEvent {
+    Open(Vec<u8>),
+    None,
+}
+
+pub struct WebEvents {
     fullscreen_event: FullscreenEvent,
+    file_event: FileEvent,
 }
 
 impl WebEvents {
     fn new() -> WebEvents {
         WebEvents {
             fullscreen_event: FullscreenEvent::None,
+            file_event: FileEvent::None,
         }
     }
 }
@@ -131,6 +140,7 @@ async fn main() {
             break;
         }
 
+        /*
         // This is a hack used to load files on WASM
         if state.is_waiting_file_callback {
             let mut mutex = WASM_ROM.lock().unwrap();
@@ -155,6 +165,7 @@ async fn main() {
                 *mutex = None;
             }
         }
+        */
 
         if cfg!(target_family = "wasm") {
             let mut web_events = web_events.borrow_mut();
@@ -169,6 +180,32 @@ async fn main() {
                     web_events.fullscreen_event = FullscreenEvent::None;
                 }
 
+                _ => {}
+            }
+
+            match &web_events.file_event {
+                FileEvent::Open(rom) => {
+                    let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
+                    let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
+                    let cartridge_type = header.cartridge_type;
+                    let file_size = rom.len();
+                    let rom_banks = header.rom_bank_amount;
+                    let description = format!(
+                        "\
+                        Title: {rom_title}\n\
+                        Cartridge type: {cartridge_type}\n\
+                        File size: {file_size} bytes\n\
+                        ROM banks: {rom_banks}\
+                        "
+                    );
+
+                    state.rom_info_description = Some(description);
+                    state.show_rom_info_window = true;
+                    state.is_waiting_file_callback = false;
+                    
+                    web_events.file_event = FileEvent::None;
+                }
+            
                 _ => {}
             }
         }
@@ -192,7 +229,14 @@ async fn main() {
                     egui::menu::bar(ui, |ui| {
                         ui.menu_button("File", |ui| {
                             if ui.button("Open").clicked() {
-                                handle_open_file_btn_click(&mut state);
+                                cfg_if::cfg_if! {
+                                    if #[cfg(target_family = "wasm")] {
+                                        wasm::open_file_chooser(web_events.clone());
+                                    } else {
+                                        handle_open_file_btn_click(&mut state);
+                                    }
+                                }
+
                                 ui.close_menu();
                             }
 
