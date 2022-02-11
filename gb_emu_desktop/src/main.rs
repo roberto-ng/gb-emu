@@ -5,7 +5,9 @@ use gb_emu_common::cartridge::header::Header;
 use gilrs::{Event as GamepadEvent, Gilrs};
 use macroquad::prelude::*;
 use once_cell::sync::Lazy;
+use std::cell::RefCell;
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::sync::Mutex;
 
 #[cfg(not(target_family = "wasm"))]
@@ -19,7 +21,6 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 #[cfg(target_family = "wasm")]
 use web_sys::{Event, FileReader, HtmlInputElement};
-
 
 #[cfg(target_family = "wasm")]
 extern "C" {
@@ -68,10 +69,60 @@ fn conf() -> Conf {
     }
 }
 
+enum FullscreenEvent {
+    Enter,
+    Leave,
+    None,
+}
+
+struct WebEvents {
+    fullscreen_event: FullscreenEvent,
+}
+
+impl WebEvents {
+    fn new() -> WebEvents {
+        WebEvents {
+            fullscreen_event: FullscreenEvent::None,
+        }
+    }
+}
+
 #[macroquad::main(conf)]
 async fn main() {
     let mut gilrs = Gilrs::new().unwrap();
     let mut state = State::new();
+    let web_events: Rc<RefCell<WebEvents>> = Rc::new(RefCell::new(WebEvents::new()));
+
+    cfg_if::cfg_if! {
+        if #[cfg(target_family = "wasm")] {
+            let window = web_sys::window().expect("No global `window` exists");
+            let document = window.document().expect("Should have a document on window");
+
+            let canvas = document
+                .query_selector("canvas#glcanvas")
+                .expect("Could not find canvas element")
+                .expect("Could not find canvas element");
+
+            let events = web_events.clone();
+            let document_clone = document.clone();
+            let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
+                match document_clone.fullscreen_element() {
+                    Some(_) => {
+                        // entering fullscreen
+                        events.borrow_mut().fullscreen_event = FullscreenEvent::Enter;
+                    }
+
+                    None => {
+                        // leaving fullscreen
+                        events.borrow_mut().fullscreen_event = FullscreenEvent::Leave;
+                    }
+                }
+                //panic!("Test")
+            }) as Box<dyn FnMut(_)>);
+            document.add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref()).unwrap();
+            closure.forget();
+        }
+    };
 
     loop {
         clear_background(BLACK);
@@ -105,19 +156,27 @@ async fn main() {
             }
         }
 
+        if cfg!(target_family = "wasm") {
+            let mut web_events = web_events.borrow_mut();
+            match web_events.fullscreen_event {
+                FullscreenEvent::Enter => {
+                    state.show_menu_bar = false;
+                    web_events.fullscreen_event = FullscreenEvent::None;
+                }
+
+                FullscreenEvent::Leave => {
+                    state.show_menu_bar = true;
+                    web_events.fullscreen_event = FullscreenEvent::None;
+                }
+
+                _ => {}
+            }
+        }
+
         // Process keys, mouse etc.
 
         if is_key_pressed(KeyCode::RightAlt) {
             state.show_menu_bar = !state.show_menu_bar;
-        }
-
-        if is_key_pressed(KeyCode::Escape) {
-            state.show_menu_bar = true;
-        }
-
-        if is_key_pressed(KeyCode::F11) {
-            state.show_menu_bar = false;
-            open_fullscreen();
         }
 
         // Gamepad events
@@ -144,12 +203,12 @@ async fn main() {
                                 }
                             }
                         });
-                        
+
                         if cfg!(target_family = "wasm") {
                             ui.menu_button("View", |ui| {
                                 if ui.button("Fullscreen").clicked() {
                                     open_fullscreen();
-                                    state.show_menu_bar = false;
+                                    //state.show_menu_bar = false;
                                     ui.close_menu();
                                 }
                             });

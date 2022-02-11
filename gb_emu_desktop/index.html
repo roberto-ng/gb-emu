@@ -51,6 +51,13 @@
                 }
             }
 
+            document.addEventListener("keydown", e => { 
+                if (e.key === "F11") {
+                    // prevent fullscreen
+                    e.preventDefault(); 
+                } 
+            });
+
             async function run() {
                 let wbg = await init();
 
