@@ -3,6 +3,7 @@ pub mod cpu;
 pub mod cpu_registers;
 pub mod gpu;
 pub mod instruction;
+pub mod interrupt;
 pub mod memory_bus;
 
 use std::fmt;
