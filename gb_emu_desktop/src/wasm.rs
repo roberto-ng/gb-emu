@@ -143,7 +143,7 @@ pub fn open_file_chooser(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> 
 
     let input_clone = input.clone();
     let closure = Closure::wrap(
-        Box::new(move |event: web_sys::Event| match input_clone.files() {
+        Box::new(move |_event: web_sys::Event| match input_clone.files() {
             Some(files) if files.length() > 0 => {
                 let file = files.get(0).unwrap();
                 let _ = read_file(file, events.clone());
