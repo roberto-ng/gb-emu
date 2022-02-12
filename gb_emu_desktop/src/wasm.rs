@@ -81,8 +81,8 @@ pub fn handle_web_events(events: &Rc<RefCell<WebEvents>>, state: &mut State) {
 }
 
 pub fn add_event_listeners(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> {
-    let window = web_sys::window().expect("No global `window` exists");
-    let document = window.document().expect("Should have a document on window");
+    let window = web_sys::window()?;
+    let document = window.document()?;
 
     let document_clone = document.clone();
     let closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
@@ -100,8 +100,7 @@ pub fn add_event_listeners(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue
     }) as Box<dyn FnMut(_)>);
 
     document
-        .add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref())
-        .unwrap();
+        .add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref())?;
     closure.forget();
     Ok(())
 }
