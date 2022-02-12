@@ -80,34 +80,40 @@ pub fn handle_web_events(events: &Rc<RefCell<WebEvents>>, state: &mut State) {
     }
 }
 
-pub fn add_event_listeners(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> {
-    let window = web_sys::window()?;
-    let document = window.document()?;
+/// Set up the event listeners used in the web version of the app
+pub fn add_event_listeners(events: Rc<RefCell<WebEvents>>) {
+    let window = web_sys::window().expect("No global `window` exists");
+    let document = window.document().expect("Should have a document on window");
 
     let document_clone = document.clone();
     let closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+        // Check if the document has a fullscreen element
         match document_clone.fullscreen_element() {
             Some(_) => {
-                // entering fullscreen
+                // Entering fullscreen
                 events.borrow_mut().fullscreen_event = FullscreenEvent::Enter;
             }
 
             None => {
-                // leaving fullscreen
+                // Leaving fullscreen
                 events.borrow_mut().fullscreen_event = FullscreenEvent::Leave;
             }
         }
     }) as Box<dyn FnMut(_)>);
 
     document
-        .add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref())?;
+        .add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref())
+        .unwrap();
+
+    // Release memory management of this closure from Rust to the JS GC.
     closure.forget();
-    Ok(())
 }
 
 fn read_file(file: File, events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> {
     let reader = FileReader::new()?;
     let reader_clone = reader.clone();
+
+    // Callback used to get the result
     let closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
         if let Ok(file) = reader_clone.result() {
             let rom = Uint8Array::new(&file).to_vec();
@@ -115,12 +121,16 @@ fn read_file(file: File, events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> 
         }
     }) as Box<dyn FnMut(_)>);
     reader.set_onload(Some(closure.as_ref().unchecked_ref()));
+
+    // Release memory management of this closure from Rust to the JS GC.
     closure.forget();
+
     reader.read_as_array_buffer(&file)?;
 
     Ok(())
 }
 
+/// Opens the browser's file chooser dialog and reads the file as a Vec<u8>. Sets up a FileEvent on success.
 pub fn open_file_chooser(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> {
     let window = web_sys::window().expect("No global `window` exists");
     let document = window.document().expect("Should have a document on window");
@@ -129,6 +139,7 @@ pub fn open_file_chooser(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> 
         .dyn_into::<HtmlInputElement>()?;
 
     input.set_type("file");
+    input.set_accept(".gb,.gbc"); // Accept ".gb" and ".gbc" files
 
     let input_clone = input.clone();
     let closure = Closure::wrap(
@@ -143,7 +154,11 @@ pub fn open_file_chooser(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> 
     );
 
     input.add_event_listener_with_callback("change", closure.as_ref().unchecked_ref())?;
+
+    // Release memory management of this closure from Rust to the JS GC.
     closure.forget();
+
+    // Click element
     input.click();
     Ok(())
 }

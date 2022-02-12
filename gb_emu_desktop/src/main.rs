@@ -68,7 +68,7 @@ async fn main() {
     // Set up event listeners on the web version
     cfg_if::cfg_if! {
         if #[cfg(target_family = "wasm")] {
-            let _ = wasm::add_event_listeners(web_events.clone());
+            wasm::add_event_listeners(web_events.clone());
         }
     };
 
