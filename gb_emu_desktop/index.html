@@ -23,22 +23,7 @@
 
         <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
         <script type="module">
-            import init, { js_open_file_callback, set_wasm } from "./wbindgen/gb_emu_desktop.js";
-
-            function openFile(file) {
-                let reader = new FileReader();
-                reader.onload = () => {
-                    if (reader.result === null || typeof reader.result === 'string') {
-                        throw new Error('Could not read file');
-                    }
-                    let file = new Uint8Array(reader.result);
-
-                    // Pass file to Rust
-                    js_open_file_callback(file);
-                };
-                
-                reader.readAsArrayBuffer(file);
-            }
+            import init, { set_wasm } from "./wbindgen/gb_emu_desktop.js";
 
             function openFullscreen() {
                 const canvas = document.querySelector('canvas#glcanvas');
@@ -70,21 +55,6 @@
 
                 miniquad_add_plugin({
                     register_plugin: (importObject) => {
-                        importObject.env.js_open_file = (js_object) => {
-                            //window.alert('Hi!');
-                            let input = document.createElement('input');
-                            input.type = 'file';
-                            input.addEventListener('change', () => {
-                                if (input.files === null || input.files.length < 1) {
-                                    window.alert('Could not read file');
-                                    return;
-                                }
-
-                                openFile(input.files[0]);
-                            });
-                            input.click();
-                        };
-
                         importObject.env.js_open_fullscreen = (js_object) => {
                             openFullscreen();
                         };

@@ -6,11 +6,7 @@ use config::*;
 use gb_emu_common::cartridge::header::Header;
 use gilrs::{Event as GamepadEvent, Gilrs};
 use macroquad::prelude::*;
-use once_cell::sync::Lazy;
-use std::cell::RefCell;
 use std::path::{Path, PathBuf};
-use std::rc::Rc;
-use std::sync::Mutex;
 
 #[cfg(not(target_family = "wasm"))]
 use directories::UserDirs;
@@ -18,28 +14,19 @@ use directories::UserDirs;
 use native_dialog::FileDialog;
 
 #[cfg(target_family = "wasm")]
-use wasm_bindgen::prelude::*;
+use std::cell::RefCell;
 #[cfg(target_family = "wasm")]
-use wasm_bindgen::JsCast;
+use std::rc::Rc;
 #[cfg(target_family = "wasm")]
-use web_sys::{Event, FileReader, HtmlInputElement};
-
-#[cfg(target_family = "wasm")]
-extern "C" {
-    fn js_open_file();
-    fn js_open_fullscreen();
-}
+use wasm::WebEvents;
 
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
 const MENU_BAR_HEIGHT: f32 = 23.;
 
-static WASM_ROM: Lazy<Mutex<Option<Vec<u8>>>> = Lazy::new(|| Mutex::new(None));
-
-struct State {
+pub struct State {
     pub quit: bool,
     pub show_menu_bar: bool,
-    pub is_fullscreen: bool,
     pub show_rom_info_window: bool,
     pub rom_info_description: Option<String>,
     pub is_waiting_file_callback: bool,
@@ -53,7 +40,6 @@ impl State {
         State {
             quit: false,
             show_menu_bar: true,
-            is_fullscreen: false,
             show_rom_info_window: false,
             rom_info_description: None,
             is_waiting_file_callback: false,
@@ -71,65 +57,18 @@ fn conf() -> Conf {
     }
 }
 
-pub enum FullscreenEvent {
-    Enter,
-    Leave,
-    None,
-}
-
-pub enum FileEvent {
-    Open(Vec<u8>),
-    None,
-}
-
-pub struct WebEvents {
-    fullscreen_event: FullscreenEvent,
-    file_event: FileEvent,
-}
-
-impl WebEvents {
-    fn new() -> WebEvents {
-        WebEvents {
-            fullscreen_event: FullscreenEvent::None,
-            file_event: FileEvent::None,
-        }
-    }
-}
-
 #[macroquad::main(conf)]
 async fn main() {
     let mut gilrs = Gilrs::new().unwrap();
     let mut state = State::new();
+
+    #[cfg(target_family = "wasm")]
     let web_events: Rc<RefCell<WebEvents>> = Rc::new(RefCell::new(WebEvents::new()));
 
+    // Set up event listeners on the web version
     cfg_if::cfg_if! {
         if #[cfg(target_family = "wasm")] {
-            let window = web_sys::window().expect("No global `window` exists");
-            let document = window.document().expect("Should have a document on window");
-
-            let canvas = document
-                .query_selector("canvas#glcanvas")
-                .expect("Could not find canvas element")
-                .expect("Could not find canvas element");
-
-            let events = web_events.clone();
-            let document_clone = document.clone();
-            let closure = Closure::wrap(Box::new(move |event: web_sys::Event| {
-                match document_clone.fullscreen_element() {
-                    Some(_) => {
-                        // entering fullscreen
-                        events.borrow_mut().fullscreen_event = FullscreenEvent::Enter;
-                    }
-
-                    None => {
-                        // leaving fullscreen
-                        events.borrow_mut().fullscreen_event = FullscreenEvent::Leave;
-                    }
-                }
-                //panic!("Test")
-            }) as Box<dyn FnMut(_)>);
-            document.add_event_listener_with_callback("fullscreenchange", closure.as_ref().unchecked_ref()).unwrap();
-            closure.forget();
+            let _ = wasm::add_event_listeners(web_events.clone());
         }
     };
 
@@ -140,73 +79,10 @@ async fn main() {
             break;
         }
 
-        /*
-        // This is a hack used to load files on WASM
-        if state.is_waiting_file_callback {
-            let mut mutex = WASM_ROM.lock().unwrap();
-            if let Some(rom) = mutex.as_ref() {
-                let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
-                let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
-                let cartridge_type = header.cartridge_type;
-                let file_size = rom.len();
-                let rom_banks = header.rom_bank_amount;
-                let description = format!(
-                    "\
-                    Title: {rom_title}\n\
-                    Cartridge type: {cartridge_type}\n\
-                    File size: {file_size} bytes\n\
-                    ROM banks: {rom_banks}\
-                    "
-                );
-
-                state.rom_info_description = Some(description);
-                state.show_rom_info_window = true;
-                state.is_waiting_file_callback = false;
-                *mutex = None;
-            }
-        }
-        */
-
-        if cfg!(target_family = "wasm") {
-            let mut web_events = web_events.borrow_mut();
-            match web_events.fullscreen_event {
-                FullscreenEvent::Enter => {
-                    state.show_menu_bar = false;
-                    web_events.fullscreen_event = FullscreenEvent::None;
-                }
-
-                FullscreenEvent::Leave => {
-                    state.show_menu_bar = true;
-                    web_events.fullscreen_event = FullscreenEvent::None;
-                }
-
-                _ => {}
-            }
-
-            match &web_events.file_event {
-                FileEvent::Open(rom) => {
-                    let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
-                    let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
-                    let cartridge_type = header.cartridge_type;
-                    let file_size = rom.len();
-                    let rom_banks = header.rom_bank_amount;
-                    let description = format!(
-                        "\
-                        Title: {rom_title}\n\
-                        Cartridge type: {cartridge_type}\n\
-                        File size: {file_size} bytes\n\
-                        ROM banks: {rom_banks}\
-                        "
-                    );
-
-                    state.rom_info_description = Some(description);
-                    state.show_rom_info_window = true;
-                    state.is_waiting_file_callback = false;
-                    
-                    web_events.file_event = FileEvent::None;
-                }
-            
-                _ => {}
+        // Handle events specific to the web version
+        cfg_if::cfg_if! {
+            if #[cfg(target_family = "wasm")] {
+                wasm::handle_web_events(&web_events, &mut state);
             }
         }
 
@@ -231,7 +107,7 @@ async fn main() {
                             if ui.button("Open").clicked() {
                                 cfg_if::cfg_if! {
                                     if #[cfg(target_family = "wasm")] {
-                                        wasm::open_file_chooser(web_events.clone());
+                                        let _ = wasm::open_file_chooser(web_events.clone());
                                     } else {
                                         handle_open_file_btn_click(&mut state);
                                     }
@@ -248,14 +124,18 @@ async fn main() {
                             }
                         });
 
-                        if cfg!(target_family = "wasm") {
-                            ui.menu_button("View", |ui| {
-                                if ui.button("Fullscreen").clicked() {
-                                    open_fullscreen();
-                                    //state.show_menu_bar = false;
-                                    ui.close_menu();
-                                }
-                            });
+                        cfg_if::cfg_if! {
+                            if #[cfg(target_family = "wasm")] {
+                                ui.menu_button("View", |ui| {
+                                    if ui.button("Fullscreen").clicked() {
+                                        unsafe {
+                                            wasm::js_open_fullscreen();
+                                        }
+
+                                        ui.close_menu();
+                                    }
+                                });
+                            }
                         }
                     });
                 });
@@ -307,22 +187,6 @@ async fn main() {
 
         next_frame().await;
     }
-}
-
-#[cfg(target_family = "wasm")]
-fn handle_open_file_btn_click(state: &mut State) {
-    unsafe {
-        js_open_file();
-    }
-
-    state.is_waiting_file_callback = true;
-}
-
-#[cfg(target_family = "wasm")]
-#[wasm_bindgen]
-pub fn js_open_file_callback(buffer: js_sys::Uint8Array) {
-    let rom = buffer.to_vec();
-    *WASM_ROM.lock().unwrap() = Some(rom);
 }
 
 #[cfg(not(target_family = "wasm"))]
@@ -378,31 +242,6 @@ fn handle_open_file_btn_click(state: &mut State) {
     }
 }
 
-#[cfg(target_family = "wasm")]
-fn open_fullscreen() {
-    unsafe {
-        js_open_fullscreen();
-    }
-}
-
-#[cfg(not(target_family = "wasm"))]
-fn open_fullscreen() {}
-
-fn scale_image(src_width: f32, src_height: f32, max_width: f32, max_height: f32) -> (f32, f32) {
-    let ratio_w = max_width / src_width;
-    let ratio_h = max_height / src_height;
-
-    if ratio_w < ratio_h {
-        let resize_width = max_width;
-        let resize_height = (ratio_w * src_height).round();
-        (resize_width, resize_height)
-    } else {
-        let resize_width = (ratio_h * src_width).round();
-        let resize_height = max_height;
-        (resize_width, resize_height)
-    }
-}
-
 #[cfg(not(target_family = "wasm"))]
 fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dialog::Error> {
     let home_path = match UserDirs::new() {
@@ -423,4 +262,19 @@ fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dia
         });
 
     Ok(path)
+}
+
+fn scale_image(src_width: f32, src_height: f32, max_width: f32, max_height: f32) -> (f32, f32) {
+    let ratio_w = max_width / src_width;
+    let ratio_h = max_height / src_height;
+
+    if ratio_w < ratio_h {
+        let resize_width = max_width;
+        let resize_height = (ratio_w * src_height).round();
+        (resize_width, resize_height)
+    } else {
+        let resize_width = (ratio_h * src_width).round();
+        let resize_height = max_height;
+        (resize_width, resize_height)
+    }
 }
