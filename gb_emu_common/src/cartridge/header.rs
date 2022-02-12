@@ -12,7 +12,7 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn read_rom_header(rom: &Vec<u8>) -> Result<Header> {
+    pub fn read_rom_header(rom: &[u8]) -> Result<Header> {
         if rom.len() < 0x014F {
             return Err(EmulationError::InvalidRom);
         }

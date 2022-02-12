@@ -67,8 +67,7 @@ impl Cartridge for RomOnlyCartridge {
         match &self.ram {
             Some(ram) => {
                 // clone the RAM
-                let mut ram_banks = Vec::with_capacity(1);
-                ram_banks.push(ram.clone());
+                let ram_banks = vec![*ram];
                 ram_banks
             }
 

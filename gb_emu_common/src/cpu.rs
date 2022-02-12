@@ -396,7 +396,7 @@ impl Cpu {
                 let next_instruction = self.pc.wrapping_add(data.bytes);
                 self.push(next_instruction)?;
 
-                let next_pc = vec.clone() as u16;
+                let next_pc = *vec as u16;
                 (next_pc, data.cycles)
             }
 
@@ -851,7 +851,7 @@ impl Cpu {
     #[inline(always)]
     pub fn get_word_source_value(&self, source: &WordSource) -> Result<u16> {
         match &source {
-            WordSource::Registers(rr) => Ok(self.get_rr_value(&rr)),
+            WordSource::Registers(rr) => Ok(self.get_rr_value(rr)),
 
             WordSource::Immediate16 => self.read_next_word(),
 
@@ -864,7 +864,7 @@ impl Cpu {
     #[inline(always)]
     pub fn get_word_target_value(&mut self, target: &WordTarget) -> Result<u16> {
         match &target {
-            WordTarget::Registers(rr) => Ok(self.get_rr_value(&rr)),
+            WordTarget::Registers(rr) => Ok(self.get_rr_value(rr)),
 
             WordTarget::Direct => {
                 let address = self.read_next_word()?;
