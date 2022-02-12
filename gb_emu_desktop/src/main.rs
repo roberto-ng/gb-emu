@@ -49,6 +49,12 @@ impl State {
     }
 }
 
+impl Default for State {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn conf() -> Conf {
     Conf {
         window_title: String::from("RustBoy"),
@@ -101,7 +107,7 @@ async fn main() {
 
         egui_macroquad::ui(|ctx| {
             if state.show_menu_bar {
-                egui::TopBottomPanel::top("top_panel").show(&ctx, |ui| {
+                egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
                     egui::menu::bar(ui, |ui| {
                         ui.menu_button("File", |ui| {
                             if ui.button("Open").clicked() {
@@ -144,7 +150,7 @@ async fn main() {
             if let Some(description) = &state.rom_info_description {
                 egui::Window::new("ROM info")
                     .open(&mut state.show_rom_info_window)
-                    .show(&ctx, |ui| {
+                    .show(ctx, |ui| {
                         ui.label(description);
                     });
             }
@@ -191,10 +197,7 @@ async fn main() {
 
 #[cfg(not(target_family = "wasm"))]
 fn handle_open_file_btn_click(state: &mut State) {
-    let last_folder_path = state
-        .last_used_dir
-        .clone()
-        .map(|last_folder| PathBuf::from(last_folder));
+    let last_folder_path = state.last_used_dir.clone().map(PathBuf::from);
     let rom_path = open_file(&last_folder_path).expect("Could not read file");
 
     if let Some(rom_path) = rom_path {
@@ -219,7 +222,7 @@ fn handle_open_file_btn_click(state: &mut State) {
 
         let rom = std::fs::read(&rom_path).expect("Could not read file");
         let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
-        let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
+        let rom_title = header.title.unwrap_or_else(|| String::from("NO TITLE"));
         let file_name: &str = Path::new(&rom_path)
             .file_name()
             .map(|file_name| file_name.to_str())
@@ -249,7 +252,7 @@ fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dia
         None => PathBuf::from(""),
     };
 
-    let start_path = last_folder.to_owned().unwrap_or(home_path.to_owned());
+    let start_path = last_folder.to_owned().unwrap_or(home_path);
     let path = FileDialog::new()
         .set_location(&start_path)
         .add_filter("GB/GBC ROM", &["gb", "gbc"])
