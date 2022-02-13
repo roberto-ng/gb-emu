@@ -5,6 +5,7 @@ pub mod gpu;
 pub mod instruction;
 pub mod interrupt;
 pub mod memory_bus;
+pub mod timer;
 
 use std::fmt;
 

@@ -12,6 +12,7 @@ pub struct MemoryBus {
     interrupt_enable_register: InterruptRegister,
     interrupt_flag_register: InterruptRegister,
     divider_register: u8,
+    timer_modulo: u8,
 }
 
 impl MemoryBus {
@@ -27,6 +28,7 @@ impl MemoryBus {
             interrupt_enable_register: 0.into(),
             interrupt_flag_register: 0.into(),
             divider_register: 0,
+            timer_modulo: 0,
         })
     }
 
@@ -61,6 +63,8 @@ impl MemoryBus {
             INTERRUPT_FLAG_REGISTER => Ok(self.interrupt_flag_register.into()),
 
             DIVIDER_REGISTER => Ok(self.divider_register),
+
+            TIMER_MODULO_REGISTER => Ok(self.timer_modulo),
 
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
@@ -124,6 +128,11 @@ impl MemoryBus {
             DIVIDER_REGISTER => {
                 // Writing any value to this register resets it to $00
                 self.reset_divider_register();
+                Ok(())
+            }
+
+            TIMER_MODULO_REGISTER => {
+                self.timer_modulo = value;
                 Ok(())
             }
 
