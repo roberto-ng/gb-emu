@@ -1,7 +1,7 @@
 use std::convert;
 
 #[derive(Clone, Copy)]
-struct InterruptRegister {
+pub struct InterruptRegister {
     v_blank: bool,
     lcd_stat: bool,
     timer: bool,

@@ -487,6 +487,10 @@ impl Cpu {
 
             Instruction::Stop(data) => {
                 self.is_stopped = true;
+                
+                // The DIV - Divider Register is reset when executing the stop instruction, 
+                // and only begins ticking again once stop mode ends
+                self.bus.reset_divider_register();
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)

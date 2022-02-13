@@ -1,6 +1,7 @@
 use crate::cartridge::*;
 use crate::gpu::*;
 use crate::{EmulationError, Result};
+use crate::interrupt::InterruptRegister;
 
 pub struct MemoryBus {
     gpu: Gpu,
@@ -8,7 +9,9 @@ pub struct MemoryBus {
     work_ram_0: [u8; WORK_RAM_0_SIZE],
     work_ram_1: [u8; WORK_RAM_N_SIZE],
     high_ram: [u8; HIGH_RAM_SIZE],
-    ie: u8,
+    interrupt_enable_register: InterruptRegister,
+    interrupt_flag_register: InterruptRegister,
+    divider_register: u8,
 }
 
 impl MemoryBus {
@@ -21,7 +24,9 @@ impl MemoryBus {
             work_ram_0: [0; WORK_RAM_0_SIZE],
             work_ram_1: [0; WORK_RAM_N_SIZE],
             high_ram: [0; HIGH_RAM_SIZE],
-            ie: 0,
+            interrupt_enable_register: 0.into(),
+            interrupt_flag_register: 0.into(),
+            divider_register: 0,
         })
     }
 
@@ -50,6 +55,12 @@ impl MemoryBus {
             }
 
             OAM_BEGIN..=OAM_END => self.gpu.read_byte_oam(address),
+            
+            INTERRUPT_ENABLE_REGISTER => Ok(self.interrupt_enable_register.into()),
+            
+            INTERRUPT_FLAG_REGISTER => Ok(self.interrupt_flag_register.into()),
+
+            DIVIDER_REGISTER => Ok(self.divider_register),
 
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
@@ -60,8 +71,6 @@ impl MemoryBus {
                 let pos = address - HIGH_RAM_START;
                 Ok(self.high_ram[pos])
             }
-
-            INTERRUPT_ENABLE_REGISTER => Ok(self.ie),
 
             _ => {
                 let error = EmulationError::InvalidMemoryRead { address };
@@ -100,6 +109,24 @@ impl MemoryBus {
 
             OAM_BEGIN..=OAM_END => self.gpu.write_byte_oam(address, value),
 
+            INTERRUPT_ENABLE_REGISTER => {
+                self.interrupt_enable_register = value.into();
+
+                Ok(())
+            }
+
+            INTERRUPT_FLAG_REGISTER => {
+                self.interrupt_flag_register = value.into();
+
+                Ok(())
+            }
+
+            DIVIDER_REGISTER => {
+                // Writing any value to this register resets it to $00
+                self.reset_divider_register();
+                Ok(())
+            }
+
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
                 Ok(())
@@ -112,17 +139,15 @@ impl MemoryBus {
                 Ok(())
             }
 
-            INTERRUPT_ENABLE_REGISTER => {
-                self.ie = value;
-
-                Ok(())
-            }
-
             _ => {
                 let error = EmulationError::InvalidMemoryWrite { address, value };
                 Err(error)
             }
         }
+    }
+
+    pub fn reset_divider_register(&mut self) {
+        self.divider_register = 0;
     }
 }
 
@@ -147,3 +172,10 @@ pub const HIGH_RAM_END: usize = 0xFFFE;
 pub const HIGH_RAM_SIZE: usize = HIGH_RAM_END - HIGH_RAM_START + 1;
 
 pub const INTERRUPT_ENABLE_REGISTER: usize = 0xFFFF;
+pub const INTERRUPT_FLAG_REGISTER: usize = 0xFF0F;
+
+// Timers
+pub const DIVIDER_REGISTER: usize = 0xFF04;
+pub const TIMER_COUNTER_REGISTER: usize = 0xFF05;
+pub const TIMER_MODULO_REGISTER: usize = 0xFF06;
+pub const TIMER_CONTROL_REGISTER: usize = 0xFF07;
