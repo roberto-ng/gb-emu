@@ -14,6 +14,7 @@ pub enum EmulationError {
     UnsupportedCartridgeType { cartridge_type: CartridgeType },
     InvalidRomSizeCode { code: u8 },
     InvalidRamSizeCode { code: u8 },
+    NoRom,
 }
 
 impl std::error::Error for EmulationError {}
@@ -77,6 +78,10 @@ impl fmt::Display for EmulationError {
                     f,
                     "The cartridge type \"{cartridge_type}\" is not supported"
                 )
+            }
+
+            Self::NoRom => {
+                write!(f, "No ROM loaded")
             }
         }
     }

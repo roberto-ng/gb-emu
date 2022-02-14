@@ -4,8 +4,8 @@ use crate::instruction::*;
 use crate::memory_bus::*;
 
 pub struct Cpu {
+    pub bus: MemoryBus,
     registers: Registers,
-    bus: MemoryBus,
     pc: u16,
     sp: u16,
     cycles: u8,
@@ -16,10 +16,10 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(rom: Vec<u8>) -> Result<Cpu> {
-        Ok(Cpu {
+    pub fn new() -> Cpu {
+        Cpu {
+            bus: MemoryBus::new(),
             registers: Registers::new(),
-            bus: MemoryBus::new(rom)?,
             pc: 0,
             sp: 0,
             cycles: 0,
@@ -27,7 +27,7 @@ impl Cpu {
             ime: false,
             set_ime: false,
             is_stopped: false,
-        })
+        }
     }
 
     pub fn step(&mut self) -> Result<()> {

@@ -4,8 +4,8 @@ use crate::gpu::*;
 use crate::timer::Timers;
 
 pub struct MemoryBus {
-    gpu: Gpu,
-    cartridge: Box<dyn Cartridge>,
+    pub gpu: Gpu,
+    pub cartridge: Option<Box<dyn Cartridge>>,
     work_ram_0: [u8; WORK_RAM_0_SIZE],
     work_ram_1: [u8; WORK_RAM_N_SIZE],
     high_ram: [u8; HIGH_RAM_SIZE],
@@ -13,27 +13,30 @@ pub struct MemoryBus {
 }
 
 impl MemoryBus {
-    pub fn new(rom: Vec<u8>) -> Result<MemoryBus> {
-        let cartridge = Box::new(create_cartridge(rom)?);
+    pub fn new() -> MemoryBus {
+        //let cartridge = Box::new(create_cartridge(rom)?);
 
-        Ok(MemoryBus {
+        MemoryBus {
             gpu: Gpu::new(),
-            cartridge,
+            cartridge: None,
             work_ram_0: [0; WORK_RAM_0_SIZE],
             work_ram_1: [0; WORK_RAM_N_SIZE],
             high_ram: [0; HIGH_RAM_SIZE],
             timers: Timers::new(),
-        })
+        }
     }
 
     pub fn read_byte(&self, address: u16) -> Result<u8> {
         let address = address as usize;
+        // Return an error if we don't have a ROM loaded
+        let cartridge = self.cartridge.as_ref().ok_or(EmulationError::NoRom)?;
+
         match address {
-            ROM_BANK_0_START..=ROM_BANK_N_END => self.cartridge.read_byte_rom(address),
+            ROM_BANK_0_START..=ROM_BANK_N_END => cartridge.read_byte_rom(address),
 
             VRAM_BEGIN..=VRAM_END => self.gpu.read_byte_vram(address),
 
-            EXTERNAL_RAM_START..=EXTERNAL_RAM_END => self.cartridge.read_byte_external_ram(address),
+            EXTERNAL_RAM_START..=EXTERNAL_RAM_END => cartridge.read_byte_external_ram(address),
 
             WORK_RAM_0_START..=WORK_RAM_0_END => {
                 let pos = address - WORK_RAM_0_START;
@@ -95,13 +98,16 @@ impl MemoryBus {
         }
 
         let address = address as usize;
+        // Return an error if we don't have a ROM loaded
+        let cartridge = self.cartridge.as_mut().ok_or(EmulationError::NoRom)?;
+
         match address {
-            ROM_BANK_0_START..=ROM_BANK_N_END => self.cartridge.write_byte_rom(address, value),
+            ROM_BANK_0_START..=ROM_BANK_N_END => cartridge.write_byte_rom(address, value),
 
             VRAM_BEGIN..=VRAM_END => self.gpu.write_byte_vram(address, value),
 
             EXTERNAL_RAM_START..=EXTERNAL_RAM_START => {
-                self.cartridge.write_byte_external_ram(address, value)
+                cartridge.write_byte_external_ram(address, value)
             }
 
             WORK_RAM_0_START..=WORK_RAM_0_END => {
