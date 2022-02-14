@@ -5,7 +5,7 @@ pub mod rom_only;
 use self::cartridge_type::*;
 use self::header::Header;
 use self::rom_only::RomOnlyCartridge;
-use crate::{EmulationError, Result};
+use crate::error::{EmulationError, Result};
 
 // each RAM bank has KiB of RAM
 type RamBank = [u8; RAM_BANK_SIZE];

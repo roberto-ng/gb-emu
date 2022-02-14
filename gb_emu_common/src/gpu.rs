@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::error::Result;
 
 pub struct Gpu {
     vram: [u8; VRAM_SIZE],

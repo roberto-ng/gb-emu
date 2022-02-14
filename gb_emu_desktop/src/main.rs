@@ -6,7 +6,9 @@ use config::*;
 use gb_emu_common::cartridge::header::Header;
 use gilrs::{Event as GamepadEvent, Gilrs};
 use macroquad::prelude::*;
+use std::error::Error;
 use std::path::{Path, PathBuf};
+use std::result::Result;
 
 #[cfg(not(target_family = "wasm"))]
 use directories::UserDirs;
@@ -32,11 +34,14 @@ pub struct State {
     pub is_waiting_file_callback: bool,
     pub last_used_dir: Option<String>,
     pub last_gamepad_event: Option<String>,
+    pub error: Option<Box<dyn Error>>,
+    pub show_error: bool,
 }
 
 impl State {
     pub fn new() -> State {
         let last_used_dir = read_config(ConfigFile::LastUsedDirectory).unwrap_or(None);
+
         State {
             quit: false,
             show_menu_bar: true,
@@ -45,6 +50,8 @@ impl State {
             is_waiting_file_callback: false,
             last_used_dir,
             last_gamepad_event: None,
+            error: None,
+            show_error: false,
         }
     }
 }
@@ -88,7 +95,11 @@ async fn main() {
         // Handle events specific to the web version
         cfg_if::cfg_if! {
             if #[cfg(target_family = "wasm")] {
-                wasm::handle_web_events(&web_events, &mut state);
+                let result = wasm::handle_web_events(&web_events, &mut state);
+                if let Err(err) = result {
+                    state.error = Some(err);
+                    state.show_error = true;
+                }
             }
         }
 
@@ -115,7 +126,11 @@ async fn main() {
                                     if #[cfg(target_family = "wasm")] {
                                         let _ = wasm::open_file_chooser(web_events.clone());
                                     } else {
-                                        handle_open_file_btn_click(&mut state);
+                                        let result = handle_open_file_btn_click(&mut state);
+                                        if let Err(err) = result {
+                                            state.error = Some(err);
+                                            state.show_error = true;
+                                        }
                                     }
                                 }
 
@@ -160,6 +175,15 @@ async fn main() {
                     ui.label(event);
                 });
             }
+
+            if let Some(err) = &state.error {
+                let error_text = format!("{err}");
+                egui::Window::new("Error")
+                    .open(&mut state.show_error)
+                    .show(ctx, |ui| {
+                        ui.label(&error_text);
+                    });
+            }
         });
 
         // draw things before egui
@@ -196,7 +220,7 @@ async fn main() {
 }
 
 #[cfg(not(target_family = "wasm"))]
-fn handle_open_file_btn_click(state: &mut State) {
+fn handle_open_file_btn_click(state: &mut State) -> Result<(), Box<dyn Error>> {
     let last_folder_path = state.last_used_dir.clone().map(PathBuf::from);
     let rom_path = open_file(&last_folder_path).expect("Could not read file");
 
@@ -207,22 +231,18 @@ fn handle_open_file_btn_click(state: &mut State) {
         if let Some(last_folder_path) = last_folder_path {
             if last_folder_path != current_folder {
                 if let Some(current_folder) = current_folder.to_str() {
-                    save_config(ConfigFile::LastUsedDirectory, current_folder)
-                        .expect("Error saving config");
+                    save_config(ConfigFile::LastUsedDirectory, current_folder)?;
                     state.last_used_dir = Some(String::from(current_folder));
                 }
             }
-        } else {
-            if let Some(current_folder) = current_folder.to_str() {
-                save_config(ConfigFile::LastUsedDirectory, current_folder)
-                    .expect("Error saving config");
-                state.last_used_dir = Some(String::from(current_folder));
-            }
+        } else if let Some(current_folder) = current_folder.to_str() {
+            save_config(ConfigFile::LastUsedDirectory, current_folder)?;
+            state.last_used_dir = Some(String::from(current_folder));
         }
 
-        let rom = std::fs::read(&rom_path).expect("Could not read file");
-        let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
-        let rom_title = header.title.unwrap_or_else(|| String::from("NO TITLE"));
+        let rom = std::fs::read(&rom_path)?;
+        let header = Header::read_rom_header(&rom)?;
+        let rom_title = header.title.unwrap_or_else(|| String::from("<NO TITLE>"));
         let file_name: &str = Path::new(&rom_path)
             .file_name()
             .map(|file_name| file_name.to_str())
@@ -240,9 +260,13 @@ fn handle_open_file_btn_click(state: &mut State) {
             ROM banks: {rom_banks}\
             "
         );
+
         state.rom_info_description = Some(description);
-        state.show_rom_info_window = true // Show ROM information window
+        state.show_rom_info_window = true; // Show ROM information window
+        state.show_error = false;
     }
+
+    Ok(())
 }
 
 #[cfg(not(target_family = "wasm"))]

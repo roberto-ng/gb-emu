@@ -32,3 +32,7 @@ web-sys = { version = "0.3.4", features = [
   'Event',
   'FileReader',
 ] }
+
+[profile.release]
+opt-level = "z"  # Optimize for size.
+strip = true  # Automatically strip symbols from the binary.

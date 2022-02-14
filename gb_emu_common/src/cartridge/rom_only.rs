@@ -1,6 +1,6 @@
 use self::header::*;
 use crate::cartridge::*;
-use crate::{EmulationError, Result};
+use crate::error::{EmulationError, Result};
 
 pub struct RomOnlyCartridge {
     rom: Vec<u8>,

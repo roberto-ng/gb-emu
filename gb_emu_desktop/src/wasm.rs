@@ -2,7 +2,9 @@ use crate::State;
 use gb_emu_common::cartridge::header::Header;
 use js_sys::Uint8Array;
 use std::cell::RefCell;
+use std::error::Error;
 use std::rc::Rc;
+use std::result::Result;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, File, FileReader, HtmlInputElement};
@@ -37,7 +39,10 @@ impl WebEvents {
     }
 }
 
-pub fn handle_web_events(events: &Rc<RefCell<WebEvents>>, state: &mut State) {
+pub fn handle_web_events(
+    events: &Rc<RefCell<WebEvents>>,
+    state: &mut State,
+) -> Result<(), Box<dyn Error>> {
     let mut events = events.borrow_mut();
     match events.fullscreen_event {
         FullscreenEvent::Enter => {
@@ -55,8 +60,8 @@ pub fn handle_web_events(events: &Rc<RefCell<WebEvents>>, state: &mut State) {
 
     match &events.file_event {
         FileEvent::Open(rom) => {
-            let header = Header::read_rom_header(&rom).expect("Error while reading ROM header");
-            let rom_title = header.title.unwrap_or(String::from("NO TITLE"));
+            let header = Header::read_rom_header(&rom)?;
+            let rom_title = header.title.unwrap_or_else(|| String::from("NO TITLE"));
             let cartridge_type = header.cartridge_type;
             let file_size = rom.len();
             let rom_banks = header.rom_bank_amount;
@@ -72,12 +77,15 @@ pub fn handle_web_events(events: &Rc<RefCell<WebEvents>>, state: &mut State) {
             state.rom_info_description = Some(description);
             state.show_rom_info_window = true;
             state.is_waiting_file_callback = false;
+            state.show_error = false;
 
             events.file_event = FileEvent::None;
         }
 
         _ => {}
     }
+
+    Ok(())
 }
 
 /// Set up the event listeners used in the web version of the app

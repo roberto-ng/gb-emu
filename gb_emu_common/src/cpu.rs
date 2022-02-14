@@ -1,8 +1,7 @@
 use crate::cpu_registers::*;
+use crate::error::{EmulationError, Result};
 use crate::instruction::*;
 use crate::memory_bus::*;
-use crate::EmulationError;
-use crate::Result;
 
 pub struct Cpu {
     registers: Registers,

@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::cartridge::cartridge_type::*;
-use crate::{EmulationError, Result};
+use crate::error::{EmulationError, Result};
 
 #[derive(Clone)]
 pub struct Header {

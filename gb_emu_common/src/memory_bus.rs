@@ -1,7 +1,7 @@
 use crate::cartridge::*;
+use crate::error::{EmulationError, Result};
 use crate::gpu::*;
 use crate::timer::Timers;
-use crate::{EmulationError, Result};
 
 pub struct MemoryBus {
     gpu: Gpu,
@@ -84,6 +84,16 @@ impl MemoryBus {
     }
 
     pub fn write_byte(&mut self, address: u16, value: u8) -> Result<()> {
+        if cfg!(not(target_family = "wasm")) {
+            if address == 0xFF01 {
+                let raw_text = vec![value];
+                match String::from_utf8(raw_text) {
+                    Ok(text) => print!("{text}"),
+                    Err(_) => print!("<?>"),
+                }
+            }
+        }
+
         let address = address as usize;
         match address {
             ROM_BANK_0_START..=ROM_BANK_N_END => self.cartridge.write_byte_rom(address, value),

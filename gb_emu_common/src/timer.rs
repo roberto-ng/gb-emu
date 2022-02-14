@@ -56,12 +56,12 @@ impl Timers {
         if self.timer_control.enable {
             let frequency = self.timer_control.speed.to_u16();
             let diff = self.cycle_count / frequency - old_cycle_count / frequency;
-            
+
             let (next_timer_counter, did_overflow) = self.timer_counter.overflowing_add(diff as u8);
             self.timer_counter = next_timer_counter;
             if did_overflow {
+                // TODO: Request a Timer Interrupt
                 self.timer_counter = self.timer_modulo;
-                // TODO: Request interrupt
             }
         }
     }
