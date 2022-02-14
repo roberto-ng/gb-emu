@@ -487,8 +487,8 @@ impl Cpu {
 
             Instruction::Stop(data) => {
                 self.is_stopped = true;
-                
-                // The DIV - Divider Register is reset when executing the stop instruction, 
+
+                // The DIV - Divider Register is reset when executing the stop instruction,
                 // and only begins ticking again once stop mode ends
                 self.bus.reset_divider_register();
 

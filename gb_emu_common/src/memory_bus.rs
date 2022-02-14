@@ -1,7 +1,7 @@
 use crate::cartridge::*;
 use crate::gpu::*;
+use crate::timer::Timers;
 use crate::{EmulationError, Result};
-use crate::interrupt::InterruptRegister;
 
 pub struct MemoryBus {
     gpu: Gpu,
@@ -9,10 +9,7 @@ pub struct MemoryBus {
     work_ram_0: [u8; WORK_RAM_0_SIZE],
     work_ram_1: [u8; WORK_RAM_N_SIZE],
     high_ram: [u8; HIGH_RAM_SIZE],
-    interrupt_enable_register: InterruptRegister,
-    interrupt_flag_register: InterruptRegister,
-    divider_register: u8,
-    timer_modulo: u8,
+    timers: Timers,
 }
 
 impl MemoryBus {
@@ -25,10 +22,7 @@ impl MemoryBus {
             work_ram_0: [0; WORK_RAM_0_SIZE],
             work_ram_1: [0; WORK_RAM_N_SIZE],
             high_ram: [0; HIGH_RAM_SIZE],
-            interrupt_enable_register: 0.into(),
-            interrupt_flag_register: 0.into(),
-            divider_register: 0,
-            timer_modulo: 0,
+            timers: Timers::new(),
         })
     }
 
@@ -57,14 +51,20 @@ impl MemoryBus {
             }
 
             OAM_BEGIN..=OAM_END => self.gpu.read_byte_oam(address),
-            
-            INTERRUPT_ENABLE_REGISTER => Ok(self.interrupt_enable_register.into()),
-            
-            INTERRUPT_FLAG_REGISTER => Ok(self.interrupt_flag_register.into()),
 
-            DIVIDER_REGISTER => Ok(self.divider_register),
+            INTERRUPT_ENABLE_REGISTER => {
+                let register = self.timers.interrupt_enable_register.into();
+                Ok(register)
+            }
 
-            TIMER_MODULO_REGISTER => Ok(self.timer_modulo),
+            INTERRUPT_FLAG_REGISTER => {
+                let register = self.timers.interrupt_flag_register.into();
+                Ok(register)
+            }
+
+            DIVIDER_REGISTER => Ok(self.timers.divider_register),
+
+            TIMER_MODULO_REGISTER => Ok(self.timers.timer_modulo),
 
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
@@ -114,13 +114,13 @@ impl MemoryBus {
             OAM_BEGIN..=OAM_END => self.gpu.write_byte_oam(address, value),
 
             INTERRUPT_ENABLE_REGISTER => {
-                self.interrupt_enable_register = value.into();
+                self.timers.interrupt_enable_register = value.into();
 
                 Ok(())
             }
 
             INTERRUPT_FLAG_REGISTER => {
-                self.interrupt_flag_register = value.into();
+                self.timers.interrupt_flag_register = value.into();
 
                 Ok(())
             }
@@ -132,7 +132,7 @@ impl MemoryBus {
             }
 
             TIMER_MODULO_REGISTER => {
-                self.timer_modulo = value;
+                self.timers.timer_modulo = value;
                 Ok(())
             }
 
@@ -156,7 +156,7 @@ impl MemoryBus {
     }
 
     pub fn reset_divider_register(&mut self) {
-        self.divider_register = 0;
+        self.timers.divider_register = 0;
     }
 }
 

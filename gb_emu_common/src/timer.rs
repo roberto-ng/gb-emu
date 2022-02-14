@@ -1,6 +1,25 @@
 use core::panic;
 use std::convert;
 
+use crate::interrupt::InterruptRegister;
+
+pub struct Timers {
+    /// FF04 - DIV - Divider Register (R/W)
+    pub divider_register: u8,
+    /// FF05 - TIMA - Timer counter (R/W)
+    pub timer_counter: u8,
+    // FF06 - TMA - Timer Modulo (R/W)
+    pub timer_modulo: u8,
+    /// FF07 - TAC - Timer Control (R/W)
+    pub timer_control: TimerControl,
+    /// FF0F - IF - Interrupt Flag (R/W)
+    pub interrupt_flag_register: InterruptRegister,
+    /// FFFF - IE - Interrupt Enable (R/W)
+    pub interrupt_enable_register: InterruptRegister,
+    /// Cycle counter in t-cycles
+    cycle_count: u16,
+}
+
 pub struct TimerControl {
     enable: bool,
     speed: CpuSpeed,
@@ -11,6 +30,41 @@ pub enum CpuSpeed {
     Clock16,
     Clock64,
     Clock256,
+}
+
+impl Timers {
+    pub fn new() -> Timers {
+        Timers {
+            divider_register: 0,
+            timer_counter: 0,
+            timer_modulo: 0,
+            timer_control: 0.into(),
+            interrupt_flag_register: 0.into(),
+            interrupt_enable_register: 0.into(),
+            cycle_count: 0,
+        }
+    }
+
+    pub fn run(&mut self, cycles: u16) {
+        let old_cycle_count = self.cycle_count;
+        self.cycle_count = self.cycle_count.wrapping_add(cycles);
+
+        let diff = self.cycle_count / 64 - old_cycle_count / 64;
+        self.divider_register = self.divider_register.wrapping_add(diff as u8);
+
+        // Check if the timer is enabled
+        if self.timer_control.enable {
+            let frequency = self.timer_control.speed.to_u16();
+            let diff = self.cycle_count / frequency - old_cycle_count / frequency;
+            
+            let (next_timer_counter, did_overflow) = self.timer_counter.overflowing_add(diff as u8);
+            self.timer_counter = next_timer_counter;
+            if did_overflow {
+                self.timer_counter = self.timer_modulo;
+                // TODO: Request interrupt
+            }
+        }
+    }
 }
 
 impl TimerControl {
@@ -58,9 +112,6 @@ impl convert::From<u8> for TimerControl {
             _ => panic!("This should be unreachable"),
         };
 
-        TimerControl {
-            enable,
-            speed,
-        }
+        TimerControl { enable, speed }
     }
 }
