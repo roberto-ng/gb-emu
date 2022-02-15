@@ -21,6 +21,7 @@ pub enum FullscreenEvent {
     None,
 }
 
+#[derive(Clone)]
 pub enum FileEvent {
     Open(Vec<u8>),
     None,
@@ -59,31 +60,29 @@ pub fn handle_web_events(
         _ => {}
     }
 
-    match &events.file_event {
-        FileEvent::Open(rom) => {
-            let header = Header::read_rom_header(&rom)?;
-            let rom_title = header.title.unwrap_or_else(|| String::from("NO TITLE"));
-            let cartridge_type = header.cartridge_type;
-            let file_size = rom.len();
-            let rom_banks = header.rom_bank_amount;
-            let description = format!(
-                "\
-                Title: {rom_title}\n\
-                Cartridge type: {cartridge_type}\n\
-                File size: {file_size} bytes\n\
-                ROM banks: {rom_banks}\
-                "
-            );
+    let file_event = events.file_event.clone();
+    // Clear event
+    events.file_event = FileEvent::None;
 
-            state.rom_info_description = Some(description);
-            state.show_rom_info_window = true;
-            state.is_waiting_file_callback = false;
-            state.show_error = false;
-
-            events.file_event = FileEvent::None;
-        }
-
-        _ => {}
+    if let FileEvent::Open(rom) = &file_event {
+        let header = Header::read_rom_header(&rom)?;
+        let rom_title = header.title.unwrap_or_else(|| String::from("NO TITLE"));
+        let cartridge_type = header.cartridge_type;
+        let file_size = rom.len();
+        let rom_banks = header.rom_bank_amount;
+        let description = format!(
+            "\
+            Title: {rom_title}\n\
+            Cartridge type: {cartridge_type}\n\
+            File size: {file_size} bytes\n\
+            ROM banks: {rom_banks}\
+            "
+        );
+    
+        state.rom_info_description = Some(description);
+        state.show_rom_info_window = true;
+        state.is_waiting_file_callback = false;
+        state.show_error = false;
     }
 
     Ok(())
