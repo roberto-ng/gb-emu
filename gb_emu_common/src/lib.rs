@@ -14,17 +14,28 @@ use error::Result;
 
 pub struct GameBoy {
     pub cpu: Cpu,
+    pub cycle: u32,
 }
 
 impl GameBoy {
     pub fn new() -> GameBoy {
-        GameBoy { cpu: Cpu::new() }
+        GameBoy {
+            cpu: Cpu::new(),
+            cycle: 0,
+        }
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<()> {
         // TODO: Reset everything before loading ROM
         let cartridge = create_cartridge(rom)?;
         self.cpu.bus.cartridge = Some(Box::new(cartridge));
+        Ok(())
+    }
+
+    pub fn next(&mut self) -> Result<()> {
+        let cycles = self.cpu.step()?;
+
+        self.cycle = self.cycle.wrapping_add(cycles);
         Ok(())
     }
 

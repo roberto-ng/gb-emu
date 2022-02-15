@@ -1,9 +1,9 @@
 #[derive(Copy, Clone, Debug)]
 pub struct Data {
     pub bytes: u16,
-    pub cycles: u8,
+    pub cycles: u32,
     // The duration of conditional calls and returns is depending on if the action is taken or not
-    pub action_cycles: Option<u8>,
+    pub action_cycles: Option<u32>,
     pub opcode: u8,
     pub is_prefixed: bool,
 }
@@ -133,7 +133,7 @@ pub enum LoadType {
 }
 
 impl Data {
-    pub const fn new(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
+    pub const fn new(bytes: u16, cycles: u32, action_cycles: Option<u32>, opcode: u8) -> Data {
         Data {
             bytes,
             cycles,
@@ -144,7 +144,7 @@ impl Data {
     }
 
     // new 0xCB prefixed instruction
-    pub const fn new_cb(bytes: u16, cycles: u8, action_cycles: Option<u8>, opcode: u8) -> Data {
+    pub const fn new_cb(bytes: u16, cycles: u32, action_cycles: Option<u32>, opcode: u8) -> Data {
         Data {
             bytes,
             cycles,
@@ -154,7 +154,7 @@ impl Data {
         }
     }
 
-    pub fn get_action_cycles(&self) -> u8 {
+    pub fn get_action_cycles(&self) -> u32 {
         match self.action_cycles {
             Some(action_cycles) => action_cycles,
             None => {

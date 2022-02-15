@@ -8,11 +8,11 @@ pub struct Cpu {
     registers: Registers,
     pc: u16,
     sp: u16,
-    cycles: u8,
     is_halted: bool,
     ime: bool,     // Interrupt Master Enable Flag
     set_ime: bool, // set the IME flag only after the next instruction
     is_stopped: bool,
+    //cycles: u8,
 }
 
 impl Cpu {
@@ -22,15 +22,19 @@ impl Cpu {
             registers: Registers::new(),
             pc: 0,
             sp: 0,
-            cycles: 0,
             is_halted: false,
             ime: false,
             set_ime: false,
             is_stopped: false,
+            //cycles: 0,
         }
     }
 
-    pub fn step(&mut self) -> Result<()> {
+    pub fn step(&mut self) -> Result<u32> {
+        if self.is_halted {
+            return Ok(1);
+        }
+
         let mut instruction_byte = self.bus.read_byte(self.pc)?;
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
@@ -42,8 +46,8 @@ impl Cpu {
             Some(instruction) => {
                 let (next_pc, cycles) = self.execute(&instruction)?;
                 self.pc = next_pc;
-                self.cycles = self.cycles.wrapping_add(cycles);
-                Ok(())
+                //self.cycles = self.cycles.wrapping_add(cycles);
+                Ok(cycles)
             }
 
             None => {
@@ -56,11 +60,7 @@ impl Cpu {
         }
     }
 
-    fn execute(&mut self, instruction: &Instruction) -> Result<(u16, u8)> {
-        if self.is_halted {
-            return Ok((self.pc, 0));
-        }
-
+    fn execute(&mut self, instruction: &Instruction) -> Result<(u16, u32)> {
         if self.set_ime {
             self.ime = true;
             self.set_ime = false;
@@ -676,7 +676,7 @@ impl Cpu {
     }
 
     #[inline(always)]
-    fn call(&mut self, should_jump: bool, data: &Data) -> Result<(u16, u8)> {
+    fn call(&mut self, should_jump: bool, data: &Data) -> Result<(u16, u32)> {
         let next_pc = self.pc.wrapping_add(3);
         let result = if should_jump {
             self.push(next_pc)?;
