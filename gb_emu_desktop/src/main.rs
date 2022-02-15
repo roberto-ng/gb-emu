@@ -8,7 +8,6 @@ use gilrs::{Event as GamepadEvent, Gilrs};
 use macroquad::prelude::*;
 use std::error::Error;
 use std::path::{Path, PathBuf};
-use std::result::Result;
 
 #[cfg(not(target_family = "wasm"))]
 use directories::UserDirs;
@@ -21,6 +20,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 #[cfg(target_family = "wasm")]
 use wasm::WebEvents;
+
+pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 const GB_SCREEN_WIDTH: f32 = 160.;
 const GB_SCREEN_HEIGHT: f32 = 144.;
@@ -220,7 +221,7 @@ async fn main() {
 }
 
 #[cfg(not(target_family = "wasm"))]
-fn handle_open_file_btn_click(state: &mut State) -> Result<(), Box<dyn Error>> {
+fn handle_open_file_btn_click(state: &mut State) -> Result<()> {
     let last_folder_path = state.last_used_dir.clone().map(PathBuf::from);
     let rom_path = open_file(&last_folder_path).expect("Could not read file");
 
@@ -270,7 +271,7 @@ fn handle_open_file_btn_click(state: &mut State) -> Result<(), Box<dyn Error>> {
 }
 
 #[cfg(not(target_family = "wasm"))]
-fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>, native_dialog::Error> {
+fn open_file(last_folder: &Option<PathBuf>) -> Result<Option<String>> {
     let home_path = match UserDirs::new() {
         Some(user_dirs) => user_dirs.home_dir().to_owned(),
         None => PathBuf::from(""),

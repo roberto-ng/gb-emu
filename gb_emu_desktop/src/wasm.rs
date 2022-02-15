@@ -1,13 +1,14 @@
-use crate::State;
 use gb_emu_common::cartridge::header::Header;
 use js_sys::Uint8Array;
 use std::cell::RefCell;
-use std::error::Error;
 use std::rc::Rc;
-use std::result::Result;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, File, FileReader, HtmlInputElement};
+
+use crate::{State, Result};
+
+type JsResult<T> = std::result::Result<T, JsValue>;
 
 #[cfg(target_family = "wasm")]
 extern "C" {
@@ -42,7 +43,7 @@ impl WebEvents {
 pub fn handle_web_events(
     events: &Rc<RefCell<WebEvents>>,
     state: &mut State,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let mut events = events.borrow_mut();
     match events.fullscreen_event {
         FullscreenEvent::Enter => {
@@ -117,7 +118,7 @@ pub fn add_event_listeners(events: Rc<RefCell<WebEvents>>) {
     closure.forget();
 }
 
-fn read_file(file: File, events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> {
+fn read_file(file: File, events: Rc<RefCell<WebEvents>>) -> JsResult<()> {
     let reader = FileReader::new()?;
     let reader_clone = reader.clone();
 
@@ -139,7 +140,7 @@ fn read_file(file: File, events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> 
 }
 
 /// Opens the browser's file chooser dialog and reads the file as a Vec<u8>. Sets up a FileEvent on success.
-pub fn open_file_chooser(events: Rc<RefCell<WebEvents>>) -> Result<(), JsValue> {
+pub fn open_file_chooser(events: Rc<RefCell<WebEvents>>) -> JsResult<()> {
     let window = web_sys::window().expect("No global `window` exists");
     let document = window.document().expect("Should have a document on window");
     let input = document
