@@ -46,6 +46,8 @@ pub fn handle_web_events(
     state: &mut State,
 ) -> Result<()> {
     let mut events = events.borrow_mut();
+    let file_event = events.file_event.clone();
+
     match events.fullscreen_event {
         FullscreenEvent::Enter => {
             state.show_menu_bar = false;
@@ -60,7 +62,6 @@ pub fn handle_web_events(
         _ => {}
     }
 
-    let file_event = events.file_event.clone();
     // Clear event
     events.file_event = FileEvent::None;
 
