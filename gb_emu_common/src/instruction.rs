@@ -1566,7 +1566,7 @@ impl Instruction {
             // LD A, (u16)
             0xFA => Some(Instruction::Ld(
                 LoadType::Byte(ByteTarget::Register(R::A), ByteSource::Direct),
-                Data::new(2, 8, None, opcode),
+                Data::new(3, 8, None, opcode),
             )),
 
             // EI

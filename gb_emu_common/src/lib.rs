@@ -26,11 +26,12 @@ impl GameBoy {
     }
 
     pub fn load_rom(&mut self, rom: Vec<u8>) -> Result<()> {
-        // TODO: Reset everything before loading ROM        
+        // TODO: Reset everything before loading ROM
         self.cpu.pc = 0x0100;
         
         let cartridge = create_cartridge(rom)?;
         self.cpu.bus.cartridge = Some(Box::new(cartridge));
+        
         Ok(())
     }
 

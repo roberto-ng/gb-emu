@@ -4,6 +4,7 @@ pub struct Gpu {
     vram: [u8; VRAM_SIZE],
     oam: [u8; OAM_SIZE],
     tile_set: [Tile; 0x180],
+    pub ly: u8, // LCD Y Coordinate (Read)
 }
 
 #[derive(Clone, Copy)]
@@ -26,6 +27,7 @@ impl Gpu {
             vram: [0; VRAM_SIZE],
             oam: [0; OAM_SIZE],
             tile_set: [empty_tile(); 0x180],
+            ly: 0x90,
         }
     }
 

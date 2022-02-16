@@ -26,7 +26,13 @@ fn main() -> Result<()> {
             let byte = gb.cpu.bus.read_byte(pc + i)?;
             bytes.push(byte);
         }
-        println!("{i} - {:04X} - {bytes:2X?}", gb.cpu.pc);
+        
+        println!(
+            "{i} - {pc:04X} - {bytes:02X?} - A = {a:02X}, Z = {z}", 
+            pc = gb.cpu.pc, 
+            a = gb.cpu.registers.a,
+            z = gb.cpu.registers.f.zero,
+        );
 
         let result = gb.step();
         if let Err(err) = result {

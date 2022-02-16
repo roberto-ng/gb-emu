@@ -71,6 +71,8 @@ impl MemoryBus {
 
             TIMER_MODULO_REGISTER => Ok(self.timers.timer_modulo),
 
+            0xFF44 => Ok(self.gpu.ly),
+
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
                 Ok(0)

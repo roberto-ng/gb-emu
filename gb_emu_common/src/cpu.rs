@@ -6,7 +6,7 @@ use crate::memory_bus::*;
 pub struct Cpu {
     pub bus: MemoryBus,
     pub pc: u16,
-    registers: Registers,
+    pub registers: Registers,
     sp: u16,
     is_halted: bool,
     ime: bool,     // Interrupt Master Enable Flag
