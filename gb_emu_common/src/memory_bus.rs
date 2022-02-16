@@ -55,6 +55,8 @@ impl MemoryBus {
 
             OAM_BEGIN..=OAM_END => self.gpu.read_byte_oam(address),
 
+            0xFEA0..=0xFEFF => Ok(0),
+
             INTERRUPT_ENABLE_REGISTER => {
                 let register = self.timers.interrupt_enable_register.into();
                 Ok(register)
@@ -88,8 +90,9 @@ impl MemoryBus {
 
     pub fn write_byte(&mut self, address: u16, value: u8) -> Result<()> {
         if cfg!(not(target_family = "wasm")) {
-            if address == 0xFF01 {
-                let raw_text = vec![value];
+            if address == 0xFF02 && value == 0x81 {
+                let char = self.read_byte(0xFF01)?;
+                let raw_text = vec![char];
                 match String::from_utf8(raw_text) {
                     Ok(text) => print!("{text}"),
                     Err(_) => print!("<?>"),
@@ -128,6 +131,8 @@ impl MemoryBus {
             }
 
             OAM_BEGIN..=OAM_END => self.gpu.write_byte_oam(address, value),
+
+            0xFEA0..=0xFEFF => Ok(()),
 
             INTERRUPT_ENABLE_REGISTER => {
                 self.timers.interrupt_enable_register = value.into();

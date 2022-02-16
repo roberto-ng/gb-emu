@@ -23,7 +23,7 @@ impl fmt::Display for EmulationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Self::InvalidMemoryRead { address } => {
-                write!(f, "Invalid cartridge read on address {address:#06X}")
+                write!(f, "Invalid read on address {address:#06X}")
             }
 
             Self::InvalidMemoryWrite { address, value } => {

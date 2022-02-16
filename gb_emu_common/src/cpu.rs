@@ -5,8 +5,8 @@ use crate::memory_bus::*;
 
 pub struct Cpu {
     pub bus: MemoryBus,
+    pub pc: u16,
     registers: Registers,
-    pc: u16,
     sp: u16,
     is_halted: bool,
     ime: bool,     // Interrupt Master Enable Flag
@@ -20,7 +20,7 @@ impl Cpu {
         Cpu {
             bus: MemoryBus::new(),
             registers: Registers::new(),
-            pc: 0,
+            pc: 0x0100,
             sp: 0,
             is_halted: false,
             ime: false,
@@ -44,9 +44,9 @@ impl Cpu {
 
         match Instruction::from_byte(instruction_byte, prefixed) {
             Some(instruction) => {
+                //println!("{:4X}", self.pc);
                 let (next_pc, cycles) = self.execute(&instruction)?;
                 self.pc = next_pc;
-                //self.cycles = self.cycles.wrapping_add(cycles);
                 Ok(cycles)
             }
 
@@ -563,7 +563,7 @@ impl Cpu {
                 // Relative Jump by adding e8 to the address of the instruction following the JR
                 let should_jump = self.perform_jump_test(test);
                 let next_instruction = self.pc.wrapping_add(data.bytes);
-                let byte = self.read_next_byte()?;
+                let byte = self.read_next_byte()? as i8;
 
                 if should_jump {
                     let next_pc = next_instruction.wrapping_add(byte as u16);
@@ -609,7 +609,17 @@ impl Cpu {
             Instruction::Call(test, data) => {
                 // call a subroutine/function
                 let should_jump = self.perform_jump_test(test);
-                self.call(should_jump, data)?
+                let next_pc = self.pc.wrapping_add(3);
+        
+                if should_jump {
+                    self.push(next_pc)?;
+
+                    let cycles = data.get_action_cycles();
+                    let next_pc = self.read_next_word()?;
+                    (next_pc, cycles)
+                } else {
+                    (next_pc, data.cycles)
+                }
             }
 
             Instruction::Ret(test, data) => {
@@ -653,11 +663,11 @@ impl Cpu {
     #[inline(always)]
     fn push(&mut self, value: u16) -> Result<()> {
         let byte = (value & 0xFF00) >> 8;
-        self.pc = self.pc.wrapping_sub(1);
+        self.sp = self.pc.wrapping_sub(1);
         self.bus.write_byte(self.sp, byte as u8)?;
 
         let byte = value & 0xFF;
-        self.pc = self.pc.wrapping_sub(1);
+        self.sp = self.pc.wrapping_sub(1);
         self.bus.write_byte(self.sp, byte as u8)?;
 
         Ok(())
@@ -672,21 +682,6 @@ impl Cpu {
         self.sp = self.sp.wrapping_add(1);
 
         let result = (msb << 8) | lsb;
-        Ok(result)
-    }
-
-    #[inline(always)]
-    fn call(&mut self, should_jump: bool, data: &Data) -> Result<(u16, u32)> {
-        let next_pc = self.pc.wrapping_add(3);
-        let result = if should_jump {
-            self.push(next_pc)?;
-
-            let cycles = data.get_action_cycles();
-            (self.read_next_word()?, cycles)
-        } else {
-            (next_pc, data.cycles)
-        };
-
         Ok(result)
     }
 

@@ -29,6 +29,10 @@ pub fn create_cartridge(rom: Vec<u8>) -> Result<impl Cartridge> {
             RomOnlyCartridge::new(rom, header)
         }
 
+        CartridgeType::Mbc1 if header.rom_bank_amount == 2 => {
+            RomOnlyCartridge::new(rom, header)
+        }
+
         _ => {
             let error = EmulationError::UnsupportedCartridgeType {
                 cartridge_type: header.cartridge_type,
