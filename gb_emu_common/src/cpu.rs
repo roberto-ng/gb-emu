@@ -662,13 +662,13 @@ impl Cpu {
 
     #[inline(always)]
     fn push(&mut self, value: u16) -> Result<()> {
-        let byte = (value & 0xFF00) >> 8;
-        self.sp = self.pc.wrapping_sub(1);
-        self.bus.write_byte(self.sp, byte as u8)?;
+        let msb = (value & 0xFF00) >> 8;
+        self.sp = self.sp.wrapping_sub(1);
+        self.bus.write_byte(self.sp, msb as u8)?;
 
-        let byte = value & 0xFF;
-        self.sp = self.pc.wrapping_sub(1);
-        self.bus.write_byte(self.sp, byte as u8)?;
+        let lsb = value & 0xFF;
+        self.sp = self.sp.wrapping_sub(1);
+        self.bus.write_byte(self.sp, lsb as u8)?;
 
         Ok(())
     }
