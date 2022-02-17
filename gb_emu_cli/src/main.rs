@@ -16,9 +16,8 @@ fn main() -> Result<()> {
     let rom = fs::read(rom_path)?;
     let mut gb = GameBoy::new();
     gb.load_rom(rom)?;
-    println!("ROM loaded successfully {:#06X}", gb.cpu.pc);
 
-    let mut i = 1;
+    //let mut i = 1;
     loop {
         let pc = gb.cpu.pc;
         let mut bytes = vec![];
@@ -27,10 +26,12 @@ fn main() -> Result<()> {
             bytes.push(byte);
         }
         
+        /*
         let pc = gb.cpu.pc;
         let a = gb.cpu.registers.a;
         let c = gb.cpu.registers.f.carry;
-        //println!("{i} - pc = {pc:04X} - {bytes:02X?} - A = {a:02X}, C = {c}");
+        println!("{i} - pc = {pc:04X} - {bytes:02X?} - A = {a:02X}, C = {c}");
+        */
 
         let result = gb.step();
         if let Err(err) = result {
@@ -38,6 +39,6 @@ fn main() -> Result<()> {
             std::process::exit(1);
         }
 
-        i += 1;
+        // /i += 1;
     }
 }

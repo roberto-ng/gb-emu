@@ -10,6 +10,7 @@ pub struct MemoryBus {
     work_ram_1: [u8; WORK_RAM_N_SIZE],
     high_ram: [u8; HIGH_RAM_SIZE],
     timers: Timers,
+    sb: u8, // FF01 - SB - Serial transfer data (R/W)
 }
 
 impl MemoryBus {
@@ -23,6 +24,7 @@ impl MemoryBus {
             work_ram_1: [0; WORK_RAM_N_SIZE],
             high_ram: [0; HIGH_RAM_SIZE],
             timers: Timers::new(),
+            sb: 0,
         }
     }
 
@@ -75,7 +77,10 @@ impl MemoryBus {
 
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
-                Ok(0)
+                match address {
+                    0xFF01 => Ok(self.sb),
+                    _ => Ok(0),
+                }
             }
 
             HIGH_RAM_START..=HIGH_RAM_END => {
@@ -161,7 +166,13 @@ impl MemoryBus {
 
             IO_REGISTERS_START..=IO_REGISTERS_END => {
                 // TODO: Implement I/O registers
-                Ok(())
+                match address {
+                    0xFF01 => {
+                        self.sb = value;
+                        Ok(())
+                    },
+                    _ => Ok(()),
+                }
             }
 
             HIGH_RAM_START..=HIGH_RAM_END => {
