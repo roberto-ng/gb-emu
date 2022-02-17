@@ -1557,10 +1557,10 @@ impl Instruction {
                 Data::new(2, 12, None, opcode),
             )),
 
-            // LD SP,HL
+            // LD SP, HL
             0xF9 => Some(Instruction::Ld(
                 LoadType::Word(WordTarget::SP, WordSource::Registers(RR::HL)),
-                Data::new(2, 8, None, opcode),
+                Data::new(1, 8, None, opcode),
             )),
 
             // LD A, (u16)
