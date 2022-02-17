@@ -84,7 +84,7 @@ impl Cpu {
                 // than the addition caused a carry from the lower nibble to the upper nibble.
                 self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
 
-                self.registers.a = new_value + c;
+                self.registers.a = new_value.wrapping_add(c);
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)
@@ -545,12 +545,10 @@ impl Cpu {
                 (next_pc, data.cycles)
             }
 
-            Instruction::Jp(test, _source, data) => {
+            Instruction::Jp(test, source, data) => {
                 let should_jump = self.perform_jump_test(test);
                 if should_jump {
-                    let low_byte = self.bus.read_byte(self.pc.wrapping_add(1))? as u16;
-                    let high_byte = self.bus.read_byte(self.pc.wrapping_add(2))? as u16;
-                    let next_pc = (high_byte << 8) | low_byte;
+                    let next_pc = self.get_word_source_value(source)?;
                     let cycles = data.get_action_cycles();
                     (next_pc, cycles)
                 } else {

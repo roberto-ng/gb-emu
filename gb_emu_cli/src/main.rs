@@ -28,10 +28,11 @@ fn main() -> Result<()> {
         }
         
         println!(
-            "{i} - {pc:04X} - {bytes:02X?} - A = {a:02X}, Z = {z}", 
+            "{i} - {pc:04X} - {bytes:02X?} - A = {a:02X}, H = {h:02X}, L = {l:02X}", 
             pc = gb.cpu.pc, 
             a = gb.cpu.registers.a,
-            z = gb.cpu.registers.f.zero,
+            h = gb.cpu.registers.h,
+            l = gb.cpu.registers.l,
         );
 
         let result = gb.step();
