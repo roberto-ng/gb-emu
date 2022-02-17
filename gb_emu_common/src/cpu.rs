@@ -72,7 +72,7 @@ impl Cpu {
                 let a = self.registers.a;
                 let c = if self.registers.f.carry { 1 } else { 0 };
                 let value = self.get_byte_source_value(source)?;
-                let (new_value, did_overflow) = a.overflowing_add(value);
+                let (new_value, did_overflow) = a.overflowing_add(value.wrapping_add(c));
 
                 // Set flags
                 self.registers.f.zero = new_value == 0;
@@ -84,7 +84,7 @@ impl Cpu {
                 // than the addition caused a carry from the lower nibble to the upper nibble.
                 self.registers.f.half_carry = (self.registers.a & 0xF) + (value & 0xF) > 0xF;
 
-                self.registers.a = new_value.wrapping_add(c);
+                self.registers.a = new_value;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
                 (next_pc, data.cycles)

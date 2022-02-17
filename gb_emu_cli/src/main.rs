@@ -27,13 +27,10 @@ fn main() -> Result<()> {
             bytes.push(byte);
         }
         
-        println!(
-            "{i} - {pc:04X} - {bytes:02X?} - A = {a:02X}, H = {h:02X}, L = {l:02X}", 
-            pc = gb.cpu.pc, 
-            a = gb.cpu.registers.a,
-            h = gb.cpu.registers.h,
-            l = gb.cpu.registers.l,
-        );
+        let pc = gb.cpu.pc;
+        let a = gb.cpu.registers.a;
+        let c = gb.cpu.registers.f.carry;
+        println!("{i} - pc = {pc:04X} - {bytes:02X?} - A = {a:02X}, C = {c}");
 
         let result = gb.step();
         if let Err(err) = result {
