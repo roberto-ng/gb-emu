@@ -30,7 +30,7 @@ fn main() -> Result<()> {
         let pc = gb.cpu.pc;
         let a = gb.cpu.registers.a;
         let c = gb.cpu.registers.f.carry;
-        println!("{i} - pc = {pc:04X} - {bytes:02X?} - A = {a:02X}, C = {c}");
+        //println!("{i} - pc = {pc:04X} - {bytes:02X?} - A = {a:02X}, C = {c}");
 
         let result = gb.step();
         if let Err(err) = result {
