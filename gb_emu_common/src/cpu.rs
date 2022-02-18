@@ -118,7 +118,7 @@ impl Cpu {
                 // Set flags
                 self.registers.f.subtract = false;
                 self.registers.f.carry = did_overflow;
-                self.registers.f.half_carry = (target_value & 0xF) + (source_value & 0xF) > 0xF;
+                self.registers.f.half_carry = (target_value & 0xFFF).wrapping_add(source_value & 0xFFFF) > 0xFFF;
 
                 self.set_word_target_value(target, new_value)?;
 
