@@ -7,7 +7,7 @@ pub struct Cpu {
     pub bus: MemoryBus,
     pub pc: u16,
     pub registers: Registers,
-    sp: u16,
+    pub sp: u16,
     is_halted: bool,
     ime: bool,     // Interrupt Master Enable Flag
     set_ime: bool, // set the IME flag only after the next instruction
@@ -44,7 +44,6 @@ impl Cpu {
 
         match Instruction::from_byte(instruction_byte, prefixed) {
             Some(instruction) => {
-                //println!("{:4X}", self.pc);
                 let (next_pc, cycles) = self.execute(&instruction)?;
                 self.pc = next_pc;
                 Ok(cycles)
@@ -117,7 +116,6 @@ impl Cpu {
                 let (new_value, did_overflow) = target_value.overflowing_add(source_value);
 
                 // Set flags
-                self.registers.f.zero = new_value == 0;
                 self.registers.f.subtract = false;
                 self.registers.f.carry = did_overflow;
                 self.registers.f.half_carry = (target_value & 0xF) + (source_value & 0xF) > 0xF;
@@ -314,7 +312,7 @@ impl Cpu {
             Instruction::Res(bit_pos, target, data) => {
                 // Set bit u3 in target to 0. Bit 0 is the rightmost one, bit 7 the leftmost one.
                 let byte = self.get_byte_target_value(target)?;
-                let result = byte & !(0b00000001 << bit_pos);
+                let result = byte & !(1 << bit_pos);
                 self.set_byte_target_value(target, result)?;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
@@ -404,13 +402,13 @@ impl Cpu {
                 let a = self.registers.a;
                 let carry = if self.registers.f.carry { 1 } else { 0 };
                 let value = self.get_byte_source_value(source)?;
-                let result = a.wrapping_sub(value).wrapping_sub(carry);
+                let (result, did_overflow) = a.overflowing_sub(value.wrapping_add(carry));
                 self.registers.a = result;
 
                 // Set flags
                 self.registers.f.zero = result == 0;
                 self.registers.f.subtract = true;
-                self.registers.f.carry = value.wrapping_add(carry) > a;
+                self.registers.f.carry = did_overflow;
                 self.registers.f.half_carry = ((result ^ value ^ a) & 0x10) == 0x10;
 
                 let next_pc = self.pc.wrapping_add(data.bytes);
